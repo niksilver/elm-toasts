@@ -1,12 +1,15 @@
 import Browser
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (style)
+import Browser.Events exposing (onKeyPress)
+import Json.Decode exposing (Decoder)
 
 
 main =
-  Browser.sandbox
+  Browser.element
   { init = init
   , update = update
+  , subscriptions = subscriptions
   , view = view
   }
 
@@ -17,17 +20,39 @@ type alias Model =
   }
 
 
-init : Model
-init =
-  Model False True
+init : () -> (Model, Cmd Msg)
+init flags =
+  (Model False True, Cmd.none)
 
 
-type alias Msg = ()
+type Msg =
+  Left | Right | Ignore
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  model
+  case msg of
+    Left -> ({ model | left = not model.left}, Cmd.none)
+    Right -> ({ model | right = not model.right}, Cmd.none)
+    _ -> (model, Cmd.none)
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.map keyStringToMsg (onKeyPress containerDecoder)
+
+
+containerDecoder : Decoder String
+containerDecoder =
+  Json.Decode.field "key" Json.Decode.string
+
+
+keyStringToMsg : String -> Msg
+keyStringToMsg keyString =
+  case keyString of
+    "q" -> Left
+    "w" -> Right
+    _ -> Ignore
 
 
 view : Model -> Html Msg
