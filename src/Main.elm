@@ -2,7 +2,7 @@ import Browser
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (style)
 import Browser.Events exposing (onKeyPress)
-import Json.Decode exposing (Decoder)
+import Json.Decode as Decode exposing (Decoder)
 
 
 main =
@@ -32,8 +32,12 @@ type Msg =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Left -> ({ model | left = not model.left}, Cmd.none)
-    Right -> ({ model | right = not model.right}, Cmd.none)
+    Left ->
+      ({ model | left = not model.left}, Cmd.none)
+
+    Right ->
+      ({ model | right = not model.right}, Cmd.none)
+
     _ -> (model, Cmd.none)
 
 
@@ -44,7 +48,7 @@ subscriptions model =
 
 containerDecoder : Decoder String
 containerDecoder =
-  Json.Decode.field "key" Json.Decode.string
+  Decode.field "key" Decode.string
 
 
 keyStringToMsg : String -> Msg
@@ -70,6 +74,7 @@ viewContainer show =
       span [ style "padding" "10px" ]
         [ text "Here I am!"
         ]
+
     False ->
       span [ style "padding" "10px" ]
         [ text "Nothing to see"
