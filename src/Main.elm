@@ -1,5 +1,5 @@
 import Browser
-import Html exposing (Html, div, span, text)
+import Html exposing (Html, div, span, ul, li, text)
 import Html.Attributes exposing (style)
 import Browser.Events exposing (onKeyPress)
 import Json.Decode as Decode exposing (Decoder)
@@ -14,30 +14,42 @@ main =
   }
 
 
+type alias Toast = String
+
 type alias Model =
-  { left : Bool
-  , right : Bool
+  { left : List Toast
+  , right : List Toast
   }
 
 
 init : () -> (Model, Cmd Msg)
 init flags =
-  (Model False True, Cmd.none)
+  (Model [] [], Cmd.none)
 
 
-type Msg =
-  Left | Right | Ignore
+type Msg
+  = DisposeLeft
+  | DisposeRight
+  | AddLeft
+  | AddRight
+  | Ignore
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Left ->
-      ({ model | left = not model.left}, Cmd.none)
+    DisposeLeft ->
+      ({ model | left = [] }, Cmd.none)
 
-    Right ->
-      ({ model | right = not model.right}, Cmd.none)
+    DisposeRight ->
+      ({ model | right = [] }, Cmd.none)
 
+    AddLeft ->
+      ({ model | left = List.append model.left ["Left"] }, Cmd.none)
+
+    AddRight ->
+      ({ model | right = List.append model.right ["Right"] }, Cmd.none)
+ 
     _ -> (model, Cmd.none)
 
 
@@ -54,8 +66,10 @@ containerDecoder =
 keyStringToMsg : String -> Msg
 keyStringToMsg keyString =
   case keyString of
-    "q" -> Left
-    "w" -> Right
+    "q" -> DisposeLeft
+    "w" -> DisposeRight
+    "z" -> AddLeft
+    "x" -> AddRight
     _ -> Ignore
 
 
@@ -67,18 +81,9 @@ view model =
     ]
 
 
-viewContainer : Bool -> Html Msg
-viewContainer show =
-  case show of
-    True ->
-      span [ style "padding" "10px" ]
-        [ text "Here I am!"
-        ]
-
-    False ->
-      span [ style "padding" "10px" ]
-        [ text "Nothing to see"
-        ]
-
+viewContainer : List Toast -> Html Msg
+viewContainer toasts =
+  ul [style "display" "inline-block", style "vertical-align" "top"]
+    (List.map (\toast -> li [style "display" "list-item"] [text toast]) toasts)
 
 
