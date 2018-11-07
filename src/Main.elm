@@ -1,7 +1,14 @@
 import Browser
 import Browser.Events exposing (onKeyPress)
 import Html exposing (Html)
-import Element exposing (Element, el, row, column, text, layout)
+import Element exposing
+  ( Element
+  , el, row, column, text
+  , layout
+  , width, padding, spacing
+  , px, rgb
+  , centerX, alignTop)
+import Element.Background as Background
 import Json.Decode as Decode exposing (Decoder)
 
 
@@ -86,7 +93,8 @@ view model =
 viewContainer : List Toast -> Element Msg
 viewContainer toasts =
   List.map text toasts
-    |> column []
-    |> el []
+    |> List.map (el [padding 30, Background.color (rgb 0.8 0.8 0.8), centerX])
+    |> column [width (px 300), padding 30, spacing 20]
+    |> el [alignTop]
 
 
