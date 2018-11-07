@@ -85,7 +85,8 @@ view model =
 
 viewContainer : List Toast -> Element Msg
 viewContainer toasts =
-  el []
-    (column [] (List.map (\toast -> text toast) toasts))
+  List.map text toasts
+    |> column []
+    |> el []
 
 
