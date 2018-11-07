@@ -1,17 +1,17 @@
 import Browser
-import Html exposing (Html, div, span, ul, li, text)
-import Html.Attributes exposing (style)
 import Browser.Events exposing (onKeyPress)
+import Html exposing (Html)
+import Element exposing (Element, el, row, column, text, layout)
 import Json.Decode as Decode exposing (Decoder)
 
 
 main =
   Browser.element
-  { init = init
-  , update = update
-  , subscriptions = subscriptions
-  , view = view
-  }
+    { init = init
+    , update = update
+    , subscriptions = subscriptions
+    , view = view
+    }
 
 
 type alias Toast = String
@@ -75,15 +75,17 @@ keyStringToMsg keyString =
 
 view : Model -> Html Msg
 view model =
-  div [ style "padding" "10px" ]
-    [ viewContainer model.left
-    , viewContainer model.right
-    ]
+  [ viewContainer model.left
+  , viewContainer model.right
+  ]
+    |> row []
+    |> el []
+    |> layout []
 
 
-viewContainer : List Toast -> Html Msg
+viewContainer : List Toast -> Element Msg
 viewContainer toasts =
-  ul [style "display" "inline-block", style "vertical-align" "top"]
-    (List.map (\toast -> li [style "display" "list-item"] [text toast]) toasts)
+  el []
+    (column [] (List.map (\toast -> text toast) toasts))
 
 
