@@ -10,6 +10,7 @@ import Element exposing
   , centerX, alignTop)
 import Element.Background as Background
 import Json.Decode as Decode exposing (Decoder)
+import Animation
 
 
 main =
@@ -23,15 +24,35 @@ main =
 
 type alias Toast = String
 
+
+type alias Column =
+    { toasts : List Toast
+    , style : Animation.State
+    }
+
+
 type alias Model =
-  { left : List Toast
-  , right : List Toast
+  { left : Column
+  , right : Column
+  }
+
+
+initialColumn : Column
+initialColumn =
+  { toasts = []
+  , style =
+      Animation.style
+      [ Animation.marginTop (Animation.px 0)
+      , Animation.opacity 1.0
+      ]
   }
 
 
 init : () -> (Model, Cmd Msg)
 init flags =
-  (Model [] [], Cmd.none)
+  ( Model initialColumn initialColumn
+  , Cmd.none
+  )
 
 
 type Msg
@@ -46,16 +67,22 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     DisposeLeft ->
-      ({ model | left = [] }, Cmd.none)
+      ({ model | left = initialColumn }, Cmd.none)
 
     DisposeRight ->
-      ({ model | right = [] }, Cmd.none)
+      ({ model | right = initialColumn }, Cmd.none)
 
     AddLeft ->
-      ({ model | left = List.append model.left ["Left"] }, Cmd.none)
+      let
+          left = model.left
+      in
+        ({ model | left = { left | toasts = List.append left.toasts ["Left"] }}, Cmd.none)
 
     AddRight ->
-      ({ model | right = List.append model.right ["Right"] }, Cmd.none)
+      let
+          right = model.right
+      in
+        ({ model | right = { right | toasts = List.append right.toasts ["Right"] }}, Cmd.none)
  
     _ -> (model, Cmd.none)
 
@@ -82,17 +109,17 @@ keyStringToMsg keyString =
 
 view : Model -> Html Msg
 view model =
-  [ viewContainer model.left
-  , viewContainer model.right
+  [ viewColumn model.left
+  , viewColumn model.right
   ]
     |> row []
     |> el []
     |> layout []
 
 
-viewContainer : List Toast -> Element Msg
-viewContainer toasts =
-  List.map text toasts
+viewColumn : Column -> Element Msg
+viewColumn col =
+  List.map text col.toasts
     |> List.map (el [padding 30, Background.color (rgb 0.8 0.8 0.8), centerX])
     |> column [width (px 300), padding 30, spacing 20]
     |> el [alignTop]
