@@ -60,17 +60,33 @@ type Msg
   | DisposeRight
   | AddLeft
   | AddRight
-  | Ignore
+  | IgnoreKey
+  | AnimateLeft Animation.Msg
+  | AnimateRight Animation.Msg
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     DisposeLeft ->
-      ({ model | left = initialColumn }, Cmd.none)
+      ({ model
+       | left =
+         { toasts = model.left.toasts
+         , style = Animation.interrupt [Animation.to [Animation.marginTop (Animation.px -300), Animation.opacity 0]] model.left.style
+         }
+       }
+      , Cmd.none
+      )
 
     DisposeRight ->
-      ({ model | right = initialColumn }, Cmd.none)
+      ({ model
+       | right =
+         { toasts = model.right.toasts
+         , style = Animation.interrupt [Animation.to [Animation.marginTop (Animation.px -300), Animation.opacity 0]] model.right.style
+         }
+       }
+      , Cmd.none
+      )
 
     AddLeft ->
       let
@@ -84,12 +100,40 @@ update msg model =
       in
         ({ model | right = { right | toasts = List.append right.toasts ["Right"] }}, Cmd.none)
  
-    _ -> (model, Cmd.none)
+    IgnoreKey -> (model, Cmd.none)
+
+    AnimateLeft anim ->
+      let
+          left = model.left
+      in
+        ({ model
+         | left =
+           { left | style = Animation.update anim left.style
+           }
+         }
+        , Cmd.none
+        )
+
+    AnimateRight anim ->
+      let
+          right = model.right
+      in
+        ({ model
+         | right =
+           { right | style = Animation.update anim right.style
+           }
+         }
+        , Cmd.none
+        )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.map keyStringToMsg (onKeyPress containerDecoder)
+  Sub.batch
+  [ Sub.map keyStringToMsg (onKeyPress containerDecoder)
+  , Animation.subscription AnimateLeft [ model.left.style ]
+  , Animation.subscription AnimateRight [ model.right.style ]
+  ]
 
 
 containerDecoder : Decoder String
@@ -104,7 +148,7 @@ keyStringToMsg keyString =
     "w" -> DisposeRight
     "z" -> AddLeft
     "x" -> AddRight
-    _ -> Ignore
+    _ -> IgnoreKey
 
 
 view : Model -> Html Msg
@@ -121,7 +165,11 @@ viewColumn : Column -> Element Msg
 viewColumn col =
   List.map text col.toasts
     |> List.map (el [padding 30, Background.color (rgb 0.8 0.8 0.8), centerX])
-    |> column [width (px 300), padding 30, spacing 20]
+    |> column
+      (List.append
+        [width (px 300), padding 30, spacing 20]
+        (List.map Element.htmlAttribute (Animation.render col.style))
+      )
     |> el [alignTop]
 
 
