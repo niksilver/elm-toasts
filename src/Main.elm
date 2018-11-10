@@ -11,6 +11,7 @@ import Element exposing
 import Element.Background as Background
 import Json.Decode as Decode exposing (Decoder)
 import Animation
+import Animation.Messenger
 
 
 main =
@@ -27,13 +28,15 @@ type alias Toast = String
 
 type alias Column =
     { toasts : List Toast
-    , style : Animation.State
+    , style : Animation.Messenger.State Msg
     }
 
 
 type alias Model =
   { left : Column
+  , leftExiting : Maybe Column
   , right : Column
+  , rightExiting : Maybe Column
   }
 
 
@@ -50,7 +53,7 @@ initialColumn =
 
 init : () -> (Model, Cmd Msg)
 init flags =
-  ( Model initialColumn initialColumn
+  ( Model initialColumn Nothing initialColumn Nothing
   , Cmd.none
   )
 
@@ -61,29 +64,43 @@ type Msg
   | AddLeft
   | AddRight
   | IgnoreKey
-  | AnimateLeft Animation.Msg
-  | AnimateRight Animation.Msg
+  | AnimateLeftExiting Animation.Msg
+  | AnimateRightExiting Animation.Msg
+  | DoneLeftExiting
+  | DoneRightExiting
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  case msg of
+  case Debug.log "Message" msg of
     DisposeLeft ->
       ({ model
-       | left =
-         { toasts = model.left.toasts
-         , style = Animation.interrupt [Animation.to [Animation.marginTop (Animation.px -300), Animation.opacity 0]] model.left.style
-         }
+       | left = initialColumn
+       , leftExiting =
+         Just
+           { toasts = model.left.toasts
+           , style = Animation.interrupt
+              [ Animation.to [ Animation.marginTop (Animation.px -300), Animation.opacity 0 ]
+              , Animation.Messenger.send DoneLeftExiting
+              ]
+              model.left.style
+           }
        }
       , Cmd.none
       )
 
     DisposeRight ->
       ({ model
-       | right =
-         { toasts = model.right.toasts
-         , style = Animation.interrupt [Animation.to [Animation.marginTop (Animation.px -300), Animation.opacity 0]] model.right.style
-         }
+       | right = initialColumn
+       , rightExiting =
+         Just
+           { toasts = model.right.toasts
+           , style = Animation.interrupt
+              [ Animation.to [ Animation.marginTop (Animation.px -300), Animation.opacity 0 ]
+              , Animation.Messenger.send DoneRightExiting
+              ]
+              model.right.style
+           }
        }
       , Cmd.none
       )
@@ -102,38 +119,55 @@ update msg model =
  
     IgnoreKey -> (model, Cmd.none)
 
-    AnimateLeft anim ->
+    AnimateLeftExiting anim ->
+      case model.leftExiting of
+        Just col ->
+          let
+              (newStyle, cmds) = Animation.Messenger.update anim col.style
+          in
+            ({ model
+             | leftExiting =
+               Just { col | style = newStyle }
+             }
+            , cmds
+            )
+        Nothing ->
+          (model, Cmd.none)
+
+    AnimateRightExiting anim ->
       let
-          left = model.left
+          applyAnim col = { col | style = Animation.update anim col.style }
       in
         ({ model
-         | left =
-           { left | style = Animation.update anim left.style
-           }
+         | rightExiting =
+           Maybe.map applyAnim model.rightExiting
          }
         , Cmd.none
         )
 
-    AnimateRight anim ->
-      let
-          right = model.right
-      in
-        ({ model
-         | right =
-           { right | style = Animation.update anim right.style
-           }
-         }
+    DoneLeftExiting ->
+        ({ model | leftExiting = Nothing }
+        , Cmd.none
+        )
+
+    DoneRightExiting ->
+        ({ model | rightExiting = Nothing }
         , Cmd.none
         )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.batch
-  [ Sub.map keyStringToMsg (onKeyPress containerDecoder)
-  , Animation.subscription AnimateLeft [ model.left.style ]
-  , Animation.subscription AnimateRight [ model.right.style ]
-  ]
+  let
+      subscribe fn =
+        .style >> List.singleton >> Animation.subscription fn >> List.singleton
+  in
+    [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
+    , Maybe.map (subscribe AnimateLeftExiting) model.leftExiting |> Maybe.withDefault []
+    , Maybe.map (subscribe AnimateRightExiting) model.rightExiting |> Maybe.withDefault []
+    ]
+    |> List.concat
+    |> Sub.batch
 
 
 containerDecoder : Decoder String
@@ -153,8 +187,8 @@ keyStringToMsg keyString =
 
 view : Model -> Html Msg
 view model =
-  [ viewColumn model.left
-  , viewColumn model.right
+  [ viewColumn (Maybe.withDefault model.left model.leftExiting)
+  , viewColumn (Maybe.withDefault model.right model.rightExiting)
   ]
     |> row []
     |> el []
