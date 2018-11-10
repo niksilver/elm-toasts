@@ -58,9 +58,11 @@ init flags =
   )
 
 
+type Position = Left | Right
+
+
 type Msg
-  = DisposeLeft
-  | DisposeRight
+  = Dispose Position
   | AddLeft
   | AddRight
   | IgnoreKey
@@ -73,23 +75,29 @@ type Msg
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case Debug.log "Message" msg of
-    DisposeLeft ->
-      ({ model
-       | left = initialColumn
-       , leftExiting =
-         Just
-           { toasts = model.left.toasts
-           , style = Animation.interrupt
-              [ Animation.to [ Animation.marginTop (Animation.px -300), Animation.opacity 0 ]
-              , Animation.Messenger.send DoneLeftExiting
-              ]
-              model.left.style
-           }
-       }
-      , Cmd.none
-      )
+    Dispose Left ->
+      let
+          mainCol = model.left
+          doneMsg = DoneLeftExiting
+          setMain col model_ = { model_ | left = col }
+          setExiting maybeCol model_ = { model_ | leftExiting = maybeCol }
+          addCmds cmds model_ = (model_, cmds)
+      in
+          model
+          |> setMain initialColumn
+          |> setExiting
+           (Just
+             { toasts = mainCol.toasts
+             , style = Animation.interrupt
+                [ Animation.to [ Animation.marginTop (Animation.px -300), Animation.opacity 0 ]
+                , Animation.Messenger.send doneMsg
+                ]
+                mainCol.style
+             }
+           )
+         |> addCmds Cmd.none
 
-    DisposeRight ->
+    Dispose Right ->
       ({ model
        | right = initialColumn
        , rightExiting =
@@ -135,15 +143,19 @@ update msg model =
           (model, Cmd.none)
 
     AnimateRightExiting anim ->
-      let
-          applyAnim col = { col | style = Animation.update anim col.style }
-      in
-        ({ model
-         | rightExiting =
-           Maybe.map applyAnim model.rightExiting
-         }
-        , Cmd.none
-        )
+      case model.rightExiting of
+        Just col ->
+          let
+              (newStyle, cmds) = Animation.Messenger.update anim col.style
+          in
+            ({ model
+             | rightExiting =
+               Just { col | style = newStyle }
+             }
+            , cmds
+            )
+        Nothing ->
+          (model, Cmd.none)
 
     DoneLeftExiting ->
         ({ model | leftExiting = Nothing }
@@ -178,8 +190,8 @@ containerDecoder =
 keyStringToMsg : String -> Msg
 keyStringToMsg keyString =
   case keyString of
-    "q" -> DisposeLeft
-    "w" -> DisposeRight
+    "q" -> Dispose Left
+    "w" -> Dispose Right
     "z" -> AddLeft
     "x" -> AddRight
     _ -> IgnoreKey
