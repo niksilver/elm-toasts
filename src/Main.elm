@@ -125,21 +125,15 @@ update msg model =
            )
          |> addCmds Cmd.none
 
-    Add Left ->
+    Add pos ->
       let
-          mainCol = mainColumn model Left
-          content = "Left"
+          mainCol = mainColumn model pos
+          content = if pos == Left then "Left" else "Right"
       in
           model
-          |> setMainColumn Left { mainCol | toasts = List.append mainCol.toasts [content] }
+          |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [content] }
           |> addCmds Cmd.none
 
-    Add Right ->
-      let
-          right = model.right
-      in
-        ({ model | right = { right | toasts = List.append right.toasts ["Right"] }}, Cmd.none)
- 
     IgnoreKey -> (model, Cmd.none)
 
     AnimateLeftExiting anim ->
