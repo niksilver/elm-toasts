@@ -63,8 +63,7 @@ type Position = Left | Right
 
 type Msg
   = Dispose Position
-  | AddLeft
-  | AddRight
+  | Add Position
   | IgnoreKey
   | AnimateLeftExiting Animation.Msg
   | AnimateRightExiting Animation.Msg
@@ -126,13 +125,16 @@ update msg model =
            )
          |> addCmds Cmd.none
 
-    AddLeft ->
+    Add Left ->
       let
-          left = model.left
+          mainCol = mainColumn model Left
+          content = "Left"
       in
-        ({ model | left = { left | toasts = List.append left.toasts ["Left"] }}, Cmd.none)
+          model
+          |> setMainColumn Left { mainCol | toasts = List.append mainCol.toasts [content] }
+          |> addCmds Cmd.none
 
-    AddRight ->
+    Add Right ->
       let
           right = model.right
       in
@@ -205,8 +207,8 @@ keyStringToMsg keyString =
   case keyString of
     "q" -> Dispose Left
     "w" -> Dispose Right
-    "z" -> AddLeft
-    "x" -> AddRight
+    "z" -> Add Left
+    "x" -> Add Right
     _ -> IgnoreKey
 
 
