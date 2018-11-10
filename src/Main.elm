@@ -142,9 +142,9 @@ update msg model =
 
     IgnoreKey -> (model, Cmd.none)
 
-    AnimateExiting Left anim ->
+    AnimateExiting pos anim ->
       let
-          exCol = exitingColumn model Left
+          exCol = exitingColumn model pos
       in
           case exCol of
             Just col ->
@@ -152,25 +152,10 @@ update msg model =
                   (newStyle, cmds) = Animation.Messenger.update anim col.style
               in
                   model
-                  |> setExitingColumn Left (Just { col | style = newStyle })
+                  |> setExitingColumn pos (Just { col | style = newStyle })
                   |> addCmds cmds
             Nothing ->
               (model, Cmd.none)
-
-    AnimateExiting Right anim ->
-      case model.rightExiting of
-        Just col ->
-          let
-              (newStyle, cmds) = Animation.Messenger.update anim col.style
-          in
-            ({ model
-             | rightExiting =
-               Just { col | style = newStyle }
-             }
-            , cmds
-            )
-        Nothing ->
-          (model, Cmd.none)
 
     DoneLeftExiting ->
         ({ model | leftExiting = Nothing }
@@ -186,12 +171,13 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   let
-      subscribe fn =
-        .style >> List.singleton >> Animation.subscription fn >> List.singleton
+      subscribe pos =
+        .style >> List.singleton >> Animation.subscription (AnimateExiting pos) >> List.singleton
+      exitingCol pos = exitingColumn model pos
   in
     [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
-    , Maybe.map (subscribe (AnimateExiting Left)) model.leftExiting |> Maybe.withDefault []
-    , Maybe.map (subscribe (AnimateExiting Right)) model.rightExiting |> Maybe.withDefault []
+    , Maybe.map (subscribe Left) (exitingCol Left) |> Maybe.withDefault []
+    , Maybe.map (subscribe Right) (exitingCol Right) |> Maybe.withDefault []
     ]
     |> List.concat
     |> Sub.batch
