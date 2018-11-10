@@ -66,8 +66,7 @@ type Msg
   | Add Position
   | IgnoreKey
   | AnimateExiting Position Animation.Msg
-  | DoneLeftExiting
-  | DoneRightExiting
+  | DoneExiting Position
 
 
 mainColumn : Model -> Position -> Column
@@ -83,12 +82,6 @@ exitingColumn model pos =
     Left -> model.leftExiting
     Right -> model.rightExiting
 
-
-doneMsg : Position -> Msg
-doneMsg pos =
-  case pos of
-    Left -> DoneLeftExiting
-    Right -> DoneRightExiting
 
 
 setMainColumn : Position -> Column -> Model -> Model
@@ -124,7 +117,7 @@ update msg model =
              { toasts = mainCol.toasts
              , style = Animation.interrupt
                 [ Animation.to [ Animation.marginTop (Animation.px -300), Animation.opacity 0 ]
-                , Animation.Messenger.send (doneMsg pos)
+                , Animation.Messenger.send (DoneExiting pos)
                 ]
                 mainCol.style
              }
@@ -157,15 +150,10 @@ update msg model =
             Nothing ->
               (model, Cmd.none)
 
-    DoneLeftExiting ->
-        ({ model | leftExiting = Nothing }
-        , Cmd.none
-        )
-
-    DoneRightExiting ->
-        ({ model | rightExiting = Nothing }
-        , Cmd.none
-        )
+    DoneExiting pos ->
+      model
+      |> setExitingColumn pos Nothing
+      |> addCmds Cmd.none
 
 
 subscriptions : Model -> Sub Msg
