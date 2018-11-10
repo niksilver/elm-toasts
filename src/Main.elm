@@ -174,10 +174,13 @@ subscriptions model =
       subscribe pos =
         .style >> List.singleton >> Animation.subscription (AnimateExiting pos) >> List.singleton
       exitingCol pos = exitingColumn model pos
+      maybeToList m = Maybe.withDefault [] m
+      subscriptionsToExiting pos =
+        Maybe.map (subscribe pos) (exitingCol pos) |> maybeToList
   in
     [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
-    , Maybe.map (subscribe Left) (exitingCol Left) |> Maybe.withDefault []
-    , Maybe.map (subscribe Right) (exitingCol Right) |> Maybe.withDefault []
+    , subscriptionsToExiting Left
+    , subscriptionsToExiting Right
     ]
     |> List.concat
     |> Sub.batch
