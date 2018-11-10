@@ -77,6 +77,13 @@ mainColumn model pos =
     Right -> model.right
 
 
+exitingColumn : Model -> Position -> Maybe Column
+exitingColumn model pos =
+  case pos of
+    Left -> model.leftExiting
+    Right -> model.rightExiting
+
+
 doneMsg : Position -> Msg
 doneMsg pos =
   case pos of
@@ -136,19 +143,19 @@ update msg model =
     IgnoreKey -> (model, Cmd.none)
 
     AnimateExiting Left anim ->
-      case model.leftExiting of
-        Just col ->
-          let
-              (newStyle, cmds) = Animation.Messenger.update anim col.style
-          in
-            ({ model
-             | leftExiting =
-               Just { col | style = newStyle }
-             }
-            , cmds
-            )
-        Nothing ->
-          (model, Cmd.none)
+      let
+          exCol = exitingColumn model Left
+      in
+          case exCol of
+            Just col ->
+              let
+                  (newStyle, cmds) = Animation.Messenger.update anim col.style
+              in
+                  model
+                  |> setExitingColumn Left (Just { col | style = newStyle })
+                  |> addCmds cmds
+            Nothing ->
+              (model, Cmd.none)
 
     AnimateExiting Right anim ->
       case model.rightExiting of
