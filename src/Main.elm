@@ -65,8 +65,7 @@ type Msg
   = Dispose Position
   | Add Position
   | IgnoreKey
-  | AnimateExitingLeft Animation.Msg
-  | AnimateExitingRight Animation.Msg
+  | AnimateExiting Position Animation.Msg
   | DoneLeftExiting
   | DoneRightExiting
 
@@ -136,7 +135,7 @@ update msg model =
 
     IgnoreKey -> (model, Cmd.none)
 
-    AnimateExitingLeft anim ->
+    AnimateExiting Left anim ->
       case model.leftExiting of
         Just col ->
           let
@@ -151,7 +150,7 @@ update msg model =
         Nothing ->
           (model, Cmd.none)
 
-    AnimateExitingRight anim ->
+    AnimateExiting Right anim ->
       case model.rightExiting of
         Just col ->
           let
@@ -184,8 +183,8 @@ subscriptions model =
         .style >> List.singleton >> Animation.subscription fn >> List.singleton
   in
     [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
-    , Maybe.map (subscribe AnimateExitingLeft) model.leftExiting |> Maybe.withDefault []
-    , Maybe.map (subscribe AnimateExitingRight) model.rightExiting |> Maybe.withDefault []
+    , Maybe.map (subscribe (AnimateExiting Left)) model.leftExiting |> Maybe.withDefault []
+    , Maybe.map (subscribe (AnimateExiting Right)) model.rightExiting |> Maybe.withDefault []
     ]
     |> List.concat
     |> Sub.batch
