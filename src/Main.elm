@@ -171,32 +171,16 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   let
-      -- Given a position,
-      -- produce a function that takes that exiting column and produces an animation subscription.
-      -- That subscription is put in a list for later concatenation.
-
-      subscribe : Position -> (Column -> List (Sub Msg))
-      subscribe pos =
-        .style >> List.singleton >> Animation.subscription (AnimateExiting pos) >> List.singleton
-
-      -- The left or right exiting column.
-
-      exitingCol : Position -> Maybe Column
-      exitingCol pos = exitingColumn model pos
-
-      -- Turn a Nothing into [] and a Just x into [x]
-
-      maybeToList m = Maybe.withDefault [] m
-
-      -- Given a position, produce a list of animation subscriptions for it
-
-      subscriptionsToExiting : Position -> List (Sub Msg)
-      subscriptionsToExiting pos =
-        Maybe.map (subscribe pos) (exitingCol pos) |> maybeToList
+      subsToExiting pos =
+        case exitingColumn model pos of
+          Just col ->
+            [ Animation.subscription (AnimateExiting pos) [ col.style ] ]
+          Nothing ->
+            []
   in
     [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
-    , subscriptionsToExiting Left
-    , subscriptionsToExiting Right
+    , subsToExiting Left
+    , subsToExiting Right
     ]
     |> List.concat
     |> Sub.batch
