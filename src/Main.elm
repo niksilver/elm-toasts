@@ -72,46 +72,59 @@ type Msg
   | DoneRightExiting
 
 
+mainColumn : Model -> Position -> Column
+mainColumn model pos =
+  case pos of
+    Left -> model.left
+    Right -> model.right
+
+
+doneMsg : Position -> Msg
+doneMsg pos =
+  case pos of
+    Left -> DoneLeftExiting
+    Right -> DoneRightExiting
+
+
+setMainColumn : Position -> Column -> Model -> Model
+setMainColumn pos col model =
+  case pos of
+    Left -> { model | left = col }
+    Right -> { model | right = col }
+
+
+setExitingColumn : Position -> Maybe Column -> Model -> Model
+setExitingColumn pos maybeCol model =
+  case pos of
+    Left -> { model | leftExiting = maybeCol }
+    Right -> { model | rightExiting = maybeCol }
+
+
+addCmds : Cmd Msg -> Model -> (Model, Cmd Msg)
+addCmds cmds model =
+  (model, cmds)
+
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  case Debug.log "Message" msg of
-    Dispose Left ->
+  case msg of
+    Dispose pos ->
       let
-          mainCol = model.left
-          doneMsg = DoneLeftExiting
-          setMain col model_ = { model_ | left = col }
-          setExiting maybeCol model_ = { model_ | leftExiting = maybeCol }
-          addCmds cmds model_ = (model_, cmds)
+          mainCol = mainColumn model pos
       in
           model
-          |> setMain initialColumn
-          |> setExiting
+          |> setMainColumn pos initialColumn
+          |> setExitingColumn pos
            (Just
              { toasts = mainCol.toasts
              , style = Animation.interrupt
                 [ Animation.to [ Animation.marginTop (Animation.px -300), Animation.opacity 0 ]
-                , Animation.Messenger.send doneMsg
+                , Animation.Messenger.send (doneMsg pos)
                 ]
                 mainCol.style
              }
            )
          |> addCmds Cmd.none
-
-    Dispose Right ->
-      ({ model
-       | right = initialColumn
-       , rightExiting =
-         Just
-           { toasts = model.right.toasts
-           , style = Animation.interrupt
-              [ Animation.to [ Animation.marginTop (Animation.px -300), Animation.opacity 0 ]
-              , Animation.Messenger.send DoneRightExiting
-              ]
-              model.right.style
-           }
-       }
-      , Cmd.none
-      )
 
     AddLeft ->
       let
