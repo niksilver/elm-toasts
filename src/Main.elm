@@ -135,7 +135,6 @@ update msg model =
 
     Add pos ->
       let
-          mainCol = mainColumn model pos
           content = if pos == Left then "Left" else "Right"
       in
           model
