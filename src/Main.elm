@@ -91,6 +91,15 @@ setMainColumn pos col model =
     Right -> { model | right = col }
 
 
+appendToast : Position -> Toast -> Model -> Model
+appendToast pos toast model =
+  let
+      mainCol = mainColumn model pos
+  in
+      model
+      |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
+
+
 setExitingColumn : Position -> Maybe Column -> Model -> Model
 setExitingColumn pos maybeCol model =
   case pos of
@@ -130,7 +139,7 @@ update msg model =
           content = if pos == Left then "Left" else "Right"
       in
           model
-          |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [content] }
+          |> appendToast pos content
           |> addCmds Cmd.none
 
     IgnoreKey -> (model, Cmd.none)
