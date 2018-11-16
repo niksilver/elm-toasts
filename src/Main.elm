@@ -199,12 +199,22 @@ keyStringToMsg keyString =
 
 view : Model -> Html Msg
 view model =
-  [ viewColumn (Maybe.withDefault model.left model.leftExiting)
-  , viewColumn (Maybe.withDefault model.right model.rightExiting)
+  [ viewOverlaidColumns model.left model.leftExiting
+  , viewOverlaidColumns model.right model.rightExiting
   ]
     |> row []
     |> el []
     |> layout []
+
+
+viewOverlaidColumns : Column -> Maybe Column -> Element Msg
+viewOverlaidColumns col maybeExitingCol =
+  case maybeExitingCol of
+    Just exitingCol ->
+      el [Element.inFront (viewColumn exitingCol)] (viewColumn col)
+
+    Nothing ->
+      viewColumn col
 
 
 viewColumn : Column -> Element Msg
