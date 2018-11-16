@@ -9,6 +9,7 @@ import Element exposing
   , px, rgb
   , centerX, alignTop)
 import Element.Background as Background
+import Element.Border as Border
 import Json.Decode as Decode exposing (Decoder)
 import Animation
 import Animation.Messenger
@@ -125,7 +126,7 @@ update msg model =
            (Just
              { toasts = mainCol.toasts
              , style = Animation.interrupt
-                [ Animation.to [ Animation.marginTop (Animation.px -300), Animation.opacity 0 ]
+                [ Animation.to [ {-Animation.marginTop (Animation.px -300),-} Animation.opacity 0 ]
                 , Animation.Messenger.send (DoneExiting pos)
                 ]
                 mainCol.style
@@ -211,7 +212,7 @@ viewOverlaidColumns : Column -> Maybe Column -> Element Msg
 viewOverlaidColumns col maybeExitingCol =
   case maybeExitingCol of
     Just exitingCol ->
-      el [Element.inFront (viewColumn exitingCol)] (viewColumn col)
+      column [Element.inFront (viewColumn exitingCol), alignTop] [viewColumn col]
 
     Nothing ->
       viewColumn col
@@ -223,9 +224,12 @@ viewColumn col =
     |> List.map (el [padding 30, Background.color (rgb 0.8 0.8 0.8), centerX])
     |> column
       (List.append
-        [width (px 300), padding 30, spacing 20]
+        [ width (px 300)
+        , padding 30, spacing 20
+        , Border.width 3, Border.color (rgb 0 0 0)
+        , alignTop
+        ]
         (List.map Element.htmlAttribute (Animation.render col.style))
       )
-    |> el [alignTop]
 
 
