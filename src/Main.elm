@@ -126,8 +126,11 @@ update msg model =
            (Just
              { toasts = mainCol.toasts
              , style = Animation.interrupt
-                [ Animation.to [ {-Animation.marginTop (Animation.px -300),-} Animation.opacity 0 ]
-                , Animation.Messenger.send (DoneExiting pos)
+                [ Animation.to
+                  [ Animation.marginTop (Animation.px -300)
+                  , Animation.opacity 0
+                  ]
+                -- , Animation.Messenger.send (DoneExiting pos)
                 ]
                 mainCol.style
              }
@@ -204,7 +207,6 @@ view model =
   , viewOverlaidColumns model.right model.rightExiting
   ]
     |> row []
-    |> el []
     |> layout []
 
 
@@ -213,6 +215,7 @@ viewOverlaidColumns col maybeExitingCol =
   case maybeExitingCol of
     Just exitingCol ->
       column [Element.inFront (viewColumn exitingCol), alignTop] [viewColumn col]
+      -- column [] [viewColumn exitingCol, viewColumn col]
 
     Nothing ->
       viewColumn col
@@ -227,7 +230,6 @@ viewColumn col =
         [ width (px 300)
         , padding 30, spacing 20
         , Border.width 3, Border.color (rgb 0 0 0)
-        , alignTop
         ]
         (List.map Element.htmlAttribute (Animation.render col.style))
       )
