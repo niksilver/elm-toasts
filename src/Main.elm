@@ -23,7 +23,8 @@ main =
 
 
 type alias Toast =
-  { message : String
+  { id : Int
+  , message : String
   , style : Animation.Messenger.State Msg
   }
 
@@ -71,7 +72,7 @@ type Position = Left | Right
 
 type Msg
   = DisposeOfColumn Position
-  | AddColumn Position
+  | AddToast Position
   | IgnoreKey
   | AnimateExitingColumn Position Animation.Msg
   | DoneExitingColumn Position
@@ -104,9 +105,10 @@ setMainColumn pos col model =
     Right -> { model | right = col }
 
 
-newToast : String -> Toast
-newToast message =
-  { message = message
+newToast : Int -> String -> Toast
+newToast id message =
+  { id = id
+  , message = message
   , style = Animation.style []
   }
 
@@ -114,12 +116,13 @@ appendToast : Position -> Model -> Model
 appendToast pos model =
   let
       mainCol = mainColumn model pos
+      newId = model.toastCount
       message =
         if pos == Left then
-          String.append "Left " (String.fromInt model.toastCount)
+          String.append "Left " (String.fromInt newId)
         else
-          String.append "Right " (String.fromInt model.toastCount)
-      toast = newToast message
+          String.append "Right " (String.fromInt newId)
+      toast = newToast newId message
   in
       model
       |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
@@ -161,7 +164,7 @@ update msg model =
            )
          |> addCmds Cmd.none
 
-    AddColumn pos ->
+    AddToast pos ->
           model
           |> incrementToastCount
           |> appendToast pos
@@ -218,8 +221,8 @@ keyStringToMsg keyString =
   case keyString of
     "q" -> DisposeOfColumn Left
     "w" -> DisposeOfColumn Right
-    "z" -> AddColumn Left
-    "x" -> AddColumn Right
+    "z" -> AddToast Left
+    "x" -> AddToast Right
     _ -> IgnoreKey
 
 
