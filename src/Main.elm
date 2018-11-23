@@ -70,11 +70,11 @@ type Position = Left | Right
 
 
 type Msg
-  = Dispose Position
-  | Add Position
+  = DisposeOfColumn Position
+  | AddColumn Position
   | IgnoreKey
-  | AnimateExiting Position Animation.Msg
-  | DoneExiting Position
+  | AnimateExitingColumn Position Animation.Msg
+  | DoneExitingColumn Position
 
 
 mainColumn : Model -> Position -> Column
@@ -140,7 +140,7 @@ addCmds cmds model =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Dispose pos ->
+    DisposeOfColumn pos ->
       let
           mainCol = mainColumn model pos
       in
@@ -154,14 +154,14 @@ update msg model =
                   [ Animation.marginTop (Animation.px -300)
                   , Animation.opacity 0
                   ]
-                , Animation.Messenger.send (DoneExiting pos)
+                , Animation.Messenger.send (DoneExitingColumn pos)
                 ]
                 mainCol.style
              }
            )
          |> addCmds Cmd.none
 
-    Add pos ->
+    AddColumn pos ->
           model
           |> incrementToastCount
           |> appendToast pos
@@ -169,7 +169,7 @@ update msg model =
 
     IgnoreKey -> (model, Cmd.none)
 
-    AnimateExiting pos anim ->
+    AnimateExitingColumn pos anim ->
       let
           exCol = exitingColumn model pos
       in
@@ -184,7 +184,7 @@ update msg model =
             Nothing ->
               (model, Cmd.none)
 
-    DoneExiting pos ->
+    DoneExitingColumn pos ->
       model
       |> setExitingColumn pos Nothing
       |> addCmds Cmd.none
@@ -196,7 +196,7 @@ subscriptions model =
       subsToExiting pos =
         case exitingColumn model pos of
           Just col ->
-            [ Animation.subscription (AnimateExiting pos) [ col.style ] ]
+            [ Animation.subscription (AnimateExitingColumn pos) [ col.style ] ]
           Nothing ->
             []
   in
@@ -216,10 +216,10 @@ containerDecoder =
 keyStringToMsg : String -> Msg
 keyStringToMsg keyString =
   case keyString of
-    "q" -> Dispose Left
-    "w" -> Dispose Right
-    "z" -> Add Left
-    "x" -> Add Right
+    "q" -> DisposeOfColumn Left
+    "w" -> DisposeOfColumn Right
+    "z" -> AddColumn Left
+    "x" -> AddColumn Right
     _ -> IgnoreKey
 
 
