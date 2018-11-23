@@ -24,7 +24,10 @@ main =
     }
 
 
-type alias Toast = String
+type alias Toast =
+  { message : String
+  , style : Animation.Messenger.State Msg
+  }
 
 
 type alias Column =
@@ -103,15 +106,22 @@ setMainColumn pos col model =
     Right -> { model | right = col }
 
 
+newToast : String -> Toast
+newToast message =
+  { message = message
+  , style = Animation.style []
+  }
+
 appendToast : Position -> Model -> Model
 appendToast pos model =
   let
       mainCol = mainColumn model pos
-      toast =
+      message =
         if pos == Left then
           String.append "Left " (String.fromInt model.toastCount)
         else
           String.append "Right " (String.fromInt model.toastCount)
+      toast = newToast message
   in
       model
       |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
@@ -240,7 +250,9 @@ viewOverlaidColumns col maybeExitingCol =
 
 viewColumn : Column -> Element Msg
 viewColumn col =
-  List.map text col.toasts
+  col.toasts
+    |> List.map .message
+    |> List.map text
     |> List.map (el [padding 30, Background.color (rgb 0.8 0.8 0.8), centerX])
     |> column
       (List.append
@@ -276,16 +288,25 @@ columnToString : Column -> String
 columnToString col =
   String.concat
     [ "{ toasts = "
-    , stringListToString col.toasts
+    , toastListToString col.toasts
     , ", style = ... }"
     ]
 
-stringListToString : List Toast -> String
-stringListToString toasts =
+toastListToString : List Toast -> String
+toastListToString toasts =
   String.concat
     [ "["
-    , String.join ", " toasts
+    , List.map toastToString toasts |> String.join ", "
     , "]"
+    ]
+
+
+toastToString : Toast -> String
+toastToString toast =
+  String.concat
+    [ "{...\""
+    , toast.message
+    , "\"...}"
     ]
 
 
