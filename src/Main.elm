@@ -38,11 +38,12 @@ type alias Model =
   , leftExiting : Maybe Column
   , right : Column
   , rightExiting : Maybe Column
+  , toastCount : Int
   }
 
 
-initialColumn : Column
-initialColumn =
+emptyColumn : Column
+emptyColumn =
   { toasts = []
   , style =
       Animation.style
@@ -54,7 +55,12 @@ initialColumn =
 
 init : () -> (Model, Cmd Msg)
 init flags =
-  ( Model initialColumn Nothing initialColumn Nothing
+  ( { left = emptyColumn
+    , leftExiting = Nothing
+    , right = emptyColumn
+    , rightExiting = Nothing
+    , toastCount = 0
+    }
   , Cmd.none
   )
 
@@ -84,6 +90,11 @@ exitingColumn model pos =
     Right -> model.rightExiting
 
 
+incrementToastCount : Model -> Model
+incrementToastCount model =
+  { model
+  | toastCount = model.toastCount + 1
+  }
 
 setMainColumn : Position -> Column -> Model -> Model
 setMainColumn pos col model =
@@ -92,10 +103,15 @@ setMainColumn pos col model =
     Right -> { model | right = col }
 
 
-appendToast : Position -> Toast -> Model -> Model
-appendToast pos toast model =
+appendToast : Position -> Model -> Model
+appendToast pos model =
   let
       mainCol = mainColumn model pos
+      toast =
+        if pos == Left then
+          String.append "Left " (String.fromInt model.toastCount)
+        else
+          String.append "Right " (String.fromInt model.toastCount)
   in
       model
       |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
@@ -121,7 +137,7 @@ update msg model =
           mainCol = mainColumn model pos
       in
           model
-          |> setMainColumn pos initialColumn
+          |> setMainColumn pos emptyColumn
           |> setExitingColumn pos
            (Just
              { toasts = mainCol.toasts
@@ -130,7 +146,7 @@ update msg model =
                   [ Animation.marginTop (Animation.px -300)
                   , Animation.opacity 0
                   ]
-                -- , Animation.Messenger.send (DoneExiting pos)
+                , Animation.Messenger.send (DoneExiting pos)
                 ]
                 mainCol.style
              }
@@ -138,11 +154,9 @@ update msg model =
          |> addCmds Cmd.none
 
     Add pos ->
-      let
-          content = if pos == Left then "Left" else "Right"
-      in
           model
-          |> appendToast pos content
+          |> incrementToastCount
+          |> appendToast pos
           |> addCmds Cmd.none
 
     IgnoreKey -> (model, Cmd.none)
@@ -212,13 +226,16 @@ view model =
 
 viewOverlaidColumns : Column -> Maybe Column -> Element Msg
 viewOverlaidColumns col maybeExitingCol =
-  case maybeExitingCol of
-    Just exitingCol ->
-      column [Element.inFront (viewColumn exitingCol), alignTop] [viewColumn col]
-      -- column [] [viewColumn exitingCol, viewColumn col]
+  let
+      topEl =
+        case maybeExitingCol of
+          Just exitingCol ->
+            viewColumn exitingCol
 
-    Nothing ->
-      viewColumn col
+          Nothing ->
+            Element.none
+  in
+    column [Element.inFront topEl, alignTop] [viewColumn col]
 
 
 viewColumn : Column -> Element Msg
@@ -233,5 +250,51 @@ viewColumn col =
         ]
         (List.map Element.htmlAttribute (Animation.render col.style))
       )
+
+
+{- ---------------------------------------------------------------------
+   Debug utilities
+   -----------------------------------------------------------------------}
+
+
+modelToString : Model -> String
+modelToString model =
+  String.concat
+    [ " left = "
+    , columnToString model.left
+    , ", leftExiting = "
+    , exitingColumnToString model.leftExiting
+    , ", right = "
+    , columnToString model.right
+    , ", rightExiting = "
+    , exitingColumnToString model.rightExiting
+    , "}"
+    ]
+
+
+columnToString : Column -> String
+columnToString col =
+  String.concat
+    [ "{ toasts = "
+    , stringListToString col.toasts
+    , ", style = ... }"
+    ]
+
+stringListToString : List Toast -> String
+stringListToString toasts =
+  String.concat
+    [ "["
+    , String.join ", " toasts
+    , "]"
+    ]
+
+
+exitingColumnToString : Maybe Column -> String
+exitingColumnToString maybeCol =
+  case maybeCol of
+    Just col ->
+      String.append "Just " (columnToString col)
+    Nothing ->
+      "Nothing"
 
 
