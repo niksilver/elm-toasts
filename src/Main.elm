@@ -25,7 +25,7 @@ main =
 type alias Toast =
   { id : Int
   , message : String
-  , style : Animation.Messenger.State Msg
+  , style : Animation.State
   }
 
 
@@ -76,6 +76,7 @@ type Msg
   | IgnoreKey
   | AnimateExitingColumn Position Animation.Msg
   | DoneExitingColumn Position
+  | AnimateEnteringToast Position Int Animation.Msg
 
 
 mainColumn : Model -> Position -> Column
@@ -98,6 +99,7 @@ incrementToastCount model =
   | toastCount = model.toastCount + 1
   }
 
+
 setMainColumn : Position -> Column -> Model -> Model
 setMainColumn pos col model =
   case pos of
@@ -105,12 +107,60 @@ setMainColumn pos col model =
     Right -> { model | right = col }
 
 
+mapToasts : (Toast -> Toast) -> Position -> Model -> Model
+mapToasts tMapper pos model =
+  let
+      col = mainColumn model pos
+      newCol = { col | toasts = List.map tMapper col.toasts }
+  in
+      setMainColumn pos newCol model
+
+
 newToast : Int -> String -> Toast
 newToast id message =
   { id = id
   , message = message
-  , style = Animation.style []
+  , style = Animation.style
+        [ Animation.marginTop (Animation.px 0)
+        , Animation.opacity 1.0
+        ]
   }
+
+
+getToast : Position -> Int -> Model -> Maybe Toast
+getToast pos id model =
+  let
+      toasts = mainColumn model pos |> .toasts
+  in
+      toasts
+          |> List.filter (\t -> t.id == id)
+          |> List.head
+
+
+-- replaceToastInColumn : Toast -> Column -> Column
+-- replaceToastInColumn toast col =
+--   let
+--       updater t =
+--         if t.id = toast.id then
+--           toast
+--         else
+--           t
+--   in
+--       List.map updater col.toasts
+
+
+applyToastStyle : Position -> Int -> Animation.Msg -> Model -> Model
+applyToastStyle pos id anim model =
+  let
+      tMapper t =
+        if t.id == id then
+          { t | style = Animation.update anim t.style }
+        else
+          t
+  in
+      model
+      |> mapToasts tMapper pos
+
 
 appendToast : Position -> Model -> Model
 appendToast pos model =
@@ -184,6 +234,7 @@ update msg model =
                   model
                   |> setExitingColumn pos (Just { col | style = newStyle })
                   |> addCmds cmds
+
             Nothing ->
               (model, Cmd.none)
 
@@ -192,6 +243,10 @@ update msg model =
       |> setExitingColumn pos Nothing
       |> addCmds Cmd.none
 
+    AnimateEnteringToast pos id anim ->
+      ( model |> applyToastStyle pos id anim
+      , Cmd.none
+      )
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
