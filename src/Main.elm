@@ -3,8 +3,6 @@ import Browser.Events exposing (onKeyPress)
 import Html exposing (Html)
 import Element exposing
   ( Element
-  , el, row, column, text
-  , layout
   , width, padding, spacing
   , px, rgb
   , centerX, alignTop)
@@ -230,8 +228,8 @@ view model =
   [ viewOverlaidColumns model.left model.leftExiting
   , viewOverlaidColumns model.right model.rightExiting
   ]
-    |> row []
-    |> layout []
+    |> Element.row []
+    |> Element.layout []
 
 
 viewOverlaidColumns : Column -> Maybe Column -> Element Msg
@@ -245,16 +243,14 @@ viewOverlaidColumns col maybeExitingCol =
           Nothing ->
             Element.none
   in
-    column [Element.inFront topEl, alignTop] [viewColumn col]
+    Element.column [Element.inFront topEl, alignTop] [viewColumn col]
 
 
 viewColumn : Column -> Element Msg
 viewColumn col =
   col.toasts
-    |> List.map .message
-    |> List.map text
-    |> List.map (el [padding 30, Background.color (rgb 0.8 0.8 0.8), centerX])
-    |> column
+    |> List.map viewToast
+    |> Element.column
       (List.append
         [ width (px 300)
         , padding 30, spacing 20
@@ -262,6 +258,13 @@ viewColumn col =
         ]
         (List.map Element.htmlAttribute (Animation.render col.style))
       )
+
+
+viewToast : Toast -> Element Msg
+viewToast toast =
+  toast.message
+    |> Element.text
+    |> Element.el [padding 30, Background.color (rgb 0.8 0.8 0.8), centerX]
 
 
 {- ---------------------------------------------------------------------
