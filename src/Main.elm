@@ -49,9 +49,9 @@ emptyColumn =
   { toasts = []
   , style =
       Animation.style
-      [ Animation.marginTop (Animation.px 0)
-      , Animation.opacity 1.0
-      ]
+        [ Animation.marginTop (Animation.px 0)
+        , Animation.opacity 1.0
+        ]
   }
 
 
@@ -116,14 +116,25 @@ mapToasts tMapper pos model =
       setMainColumn pos newCol model
 
 
+getToasts : Position -> Model -> List Toast
+getToasts pos model =
+  mainColumn model pos
+  |> .toasts
+
 newToast : Int -> String -> Toast
 newToast id message =
   { id = id
   , message = message
   , style = Animation.style
+    [ Animation.marginTop (Animation.px 300)
+    , Animation.opacity 0.0
+    ]
+    |> Animation.interrupt
+      [ Animation.to
         [ Animation.marginTop (Animation.px 0)
         , Animation.opacity 1.0
         ]
+      ]
   }
 
 
@@ -244,9 +255,9 @@ update msg model =
       |> addCmds Cmd.none
 
     AnimateEnteringToast pos id anim ->
-      ( model |> applyToastStyle pos id anim
-      , Cmd.none
-      )
+      model
+      |> applyToastStyle pos id anim
+      |> addCmds Cmd.none
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -257,10 +268,15 @@ subscriptions model =
             [ Animation.subscription (AnimateExitingColumn pos) [ col.style ] ]
           Nothing ->
             []
+      subsToEntering pos =
+        getToasts pos model
+        |> List.map (\t -> Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
   in
     [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
     , subsToExiting Left
     , subsToExiting Right
+    , subsToEntering Left
+    , subsToEntering Right
     ]
     |> List.concat
     |> Sub.batch
@@ -322,7 +338,11 @@ viewToast : Toast -> Element Msg
 viewToast toast =
   toast.message
     |> Element.text
-    |> Element.el [padding 30, Background.color (rgb 0.8 0.8 0.8), centerX]
+    |> Element.el
+      (List.append
+        [ padding 30, Background.color (rgb 0.8 0.8 0.8), centerX ]
+        (List.map Element.htmlAttribute (Animation.render toast.style))
+      )
 
 
 {- ---------------------------------------------------------------------
