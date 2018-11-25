@@ -10,7 +10,6 @@ import Element.Background as Background
 import Element.Border as Border
 import Json.Decode as Decode exposing (Decoder)
 import Animation
-import Animation.Messenger
 
 
 main =
@@ -31,7 +30,7 @@ type alias Toast =
 
 type alias Column =
     { toasts : List Toast
-    , style : Animation.Messenger.State Msg
+    , style : Animation.State
     }
 
 
@@ -75,7 +74,6 @@ type Msg
   | AddToast Position
   | IgnoreKey
   | AnimateExitingColumn Position Animation.Msg
-  | DoneExitingColumn Position
   | AnimateEnteringToast Position Int Animation.Msg
 
 
@@ -196,7 +194,6 @@ update msg model =
                   [ Animation.marginTop (Animation.px -300)
                   , Animation.opacity 0
                   ]
-                , Animation.Messenger.send (DoneExitingColumn pos)
                 ]
                 mainCol.style
              }
@@ -218,19 +215,14 @@ update msg model =
           case exCol of
             Just col ->
               let
-                  (newStyle, cmds) = Animation.Messenger.update anim col.style
+                  newStyle = Animation.update anim col.style
               in
                   model
                   |> setExitingColumn pos (Just { col | style = newStyle })
-                  |> addCmds cmds
+                  |> addCmds Cmd.none
 
             Nothing ->
               (model, Cmd.none)
-
-    DoneExitingColumn pos ->
-      model
-      |> setExitingColumn pos Nothing
-      |> addCmds Cmd.none
 
     AnimateEnteringToast pos id anim ->
       model
