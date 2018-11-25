@@ -126,12 +126,12 @@ newToast id message =
   { id = id
   , message = message
   , style = Animation.style
-    [ Animation.marginTop (Animation.px 300)
+    [ Animation.marginTop (Animation.px 320)
     , Animation.opacity 0.0
     ]
     |> Animation.interrupt
       [ Animation.to
-        [ Animation.marginTop (Animation.px 0)
+        [ Animation.marginTop (Animation.px 20)
         , Animation.opacity 1.0
         ]
       ]
@@ -327,8 +327,7 @@ viewColumn col =
     |> Element.column
       (List.append
         [ width (px 300)
-        , padding 30, spacing 20
-        , Border.width 3, Border.color (rgb 0 0 0)
+        , padding 30
         ]
         (List.map Element.htmlAttribute (Animation.render col.style))
       )
