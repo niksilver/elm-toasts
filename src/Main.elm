@@ -138,28 +138,6 @@ newToast id message =
   }
 
 
-getToast : Position -> Int -> Model -> Maybe Toast
-getToast pos id model =
-  let
-      toasts = mainColumn model pos |> .toasts
-  in
-      toasts
-          |> List.filter (\t -> t.id == id)
-          |> List.head
-
-
--- replaceToastInColumn : Toast -> Column -> Column
--- replaceToastInColumn toast col =
---   let
---       updater t =
---         if t.id = toast.id then
---           toast
---         else
---           t
---   in
---       List.map updater col.toasts
-
-
 applyToastStyle : Position -> Int -> Animation.Msg -> Model -> Model
 applyToastStyle pos id anim model =
   let
