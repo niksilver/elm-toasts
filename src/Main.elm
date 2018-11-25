@@ -299,11 +299,25 @@ keyStringToMsg keyString =
 
 view : Model -> Html Msg
 view model =
+  Element.column []
+    [ viewInstructions
+    , viewMainModel model
+    ]
+    |> Element.layout []
+
+
+viewInstructions : Element Msg
+viewInstructions =
+  Element.el [Element.padding 30]
+    (Element.text "Use 'z' and x' to add a message, 'q' and 'w' to dispose of a column of messages")
+
+
+viewMainModel : Model -> Element Msg
+viewMainModel model =
   [ viewOverlaidColumns model.left model.leftExiting
   , viewOverlaidColumns model.right model.rightExiting
   ]
     |> Element.row []
-    |> Element.layout []
 
 
 viewOverlaidColumns : Column -> Maybe Column -> Element Msg
