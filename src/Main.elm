@@ -36,9 +36,9 @@ type alias Column =
 
 type alias Model =
   { left : Column
-  , leftExiting : Maybe Column
+  , leftExiting : Column
   , right : Column
-  , rightExiting : Maybe Column
+  , rightExiting : Column
   , toastCount : Int
   }
 
@@ -57,9 +57,9 @@ emptyColumn =
 init : () -> (Model, Cmd Msg)
 init flags =
   ( { left = emptyColumn
-    , leftExiting = Nothing
+    , leftExiting = emptyColumn
     , right = emptyColumn
-    , rightExiting = Nothing
+    , rightExiting = emptyColumn
     , toastCount = 0
     }
   , Cmd.none
@@ -84,7 +84,7 @@ mainColumn model pos =
     Right -> model.right
 
 
-exitingColumn : Model -> Position -> Maybe Column
+exitingColumn : Model -> Position -> Column
 exitingColumn model pos =
   case pos of
     Left -> model.leftExiting
@@ -165,11 +165,11 @@ appendToast pos model =
       |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
 
 
-setExitingColumn : Position -> Maybe Column -> Model -> Model
-setExitingColumn pos maybeCol model =
+setExitingColumn : Position -> Column -> Model -> Model
+setExitingColumn pos col model =
   case pos of
-    Left -> { model | leftExiting = maybeCol }
-    Right -> { model | rightExiting = maybeCol }
+    Left -> { model | leftExiting = col }
+    Right -> { model | rightExiting = col }
 
 
 addCmds : Cmd Msg -> Model -> (Model, Cmd Msg)
@@ -187,17 +187,15 @@ update msg model =
           model
           |> setMainColumn pos emptyColumn
           |> setExitingColumn pos
-           (Just
-             { toasts = mainCol.toasts
-             , style = Animation.interrupt
-                [ Animation.to
-                  [ Animation.marginTop (Animation.px -300)
-                  , Animation.opacity 0
+               { toasts = mainCol.toasts
+               , style = Animation.interrupt
+                  [ Animation.to
+                    [ Animation.marginTop (Animation.px -300)
+                    , Animation.opacity 0
+                    ]
                   ]
-                ]
-                mainCol.style
-             }
-           )
+                  mainCol.style
+               }
          |> addCmds Cmd.none
 
     AddToast pos ->
@@ -210,19 +208,12 @@ update msg model =
 
     AnimateExitingColumn pos anim ->
       let
-          exCol = exitingColumn model pos
+          col = exitingColumn model pos
+          newStyle = Animation.update anim col.style
       in
-          case exCol of
-            Just col ->
-              let
-                  newStyle = Animation.update anim col.style
-              in
-                  model
-                  |> setExitingColumn pos (Just { col | style = newStyle })
-                  |> addCmds Cmd.none
-
-            Nothing ->
-              (model, Cmd.none)
+          model
+          |> setExitingColumn pos { col | style = newStyle }
+          |> addCmds Cmd.none
 
     AnimateEnteringToast pos id anim ->
       model
@@ -233,11 +224,10 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   let
       subsToExiting pos =
-        case exitingColumn model pos of
-          Just col ->
+        let
+            col = exitingColumn model pos
+        in
             [ Animation.subscription (AnimateExitingColumn pos) [ col.style ] ]
-          Nothing ->
-            []
       subsToEntering pos =
         getToasts pos model
         |> List.map (\t -> Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
@@ -290,18 +280,12 @@ viewMainModel model =
     |> Element.row []
 
 
-viewOverlaidColumns : Column -> Maybe Column -> Element Msg
-viewOverlaidColumns col maybeExitingCol =
+viewOverlaidColumns : Column -> Column -> Element Msg
+viewOverlaidColumns col exitingCol =
   let
-      topEl =
-        case maybeExitingCol of
-          Just exitingCol ->
-            viewColumn exitingCol
-
-          Nothing ->
-            Element.none
+      topEl = viewColumn exitingCol
   in
-    Element.column [Element.inFront topEl, alignTop] [viewColumn col]
+      Element.column [Element.inFront topEl, alignTop] [viewColumn col]
 
 
 viewColumn : Column -> Element Msg
@@ -374,12 +358,8 @@ toastToString toast =
     ]
 
 
-exitingColumnToString : Maybe Column -> String
-exitingColumnToString maybeCol =
-  case maybeCol of
-    Just col ->
-      String.append "Just " (columnToString col)
-    Nothing ->
-      "Nothing"
+exitingColumnToString : Column -> String
+exitingColumnToString col =
+  String.append "Just " (columnToString col)
 
 
