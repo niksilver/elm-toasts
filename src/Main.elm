@@ -7,7 +7,6 @@ import Element exposing
   , px, rgb
   , centerX, alignTop)
 import Element.Background as Background
-import Element.Border as Border
 import Json.Decode as Decode exposing (Decoder)
 import Animation
 
@@ -119,6 +118,7 @@ getToasts pos model =
   mainColumn model pos
   |> .toasts
 
+
 newToast : Int -> String -> Toast
 newToast id message =
   { id = id
@@ -219,6 +219,7 @@ update msg model =
       model
       |> applyToastStyle pos id anim
       |> addCmds Cmd.none
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -323,11 +324,11 @@ modelToString model =
     [ " left = "
     , columnToString model.left
     , ", leftExiting = "
-    , exitingColumnToString model.leftExiting
+    , columnToString model.leftExiting
     , ", right = "
     , columnToString model.right
     , ", rightExiting = "
-    , exitingColumnToString model.rightExiting
+    , columnToString model.rightExiting
     , "}"
     ]
 
@@ -356,10 +357,5 @@ toastToString toast =
     , toast.message
     , "\"...}"
     ]
-
-
-exitingColumnToString : Column -> String
-exitingColumnToString col =
-  String.append "Just " (columnToString col)
 
 
