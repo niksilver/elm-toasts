@@ -23,7 +23,6 @@ main =
 type alias Toast =
   { id : Int
   , message : String
-  , style : Animation.State
   }
 
 
@@ -62,7 +61,6 @@ type Msg
   = DisposeOfColumn Position
   | AddToast Position
   | IgnoreKey
-  | AnimateEnteringToast Position Int Animation.Msg
 
 
 mainColumn : Model -> Position -> Column
@@ -86,49 +84,11 @@ setMainColumn pos col model =
     Right -> { model | right = col }
 
 
-mapToasts : (Toast -> Toast) -> Position -> Model -> Model
-mapToasts tMapper pos model =
-  let
-      col = mainColumn model pos
-      newCol = { col | toasts = List.map tMapper col.toasts }
-  in
-      setMainColumn pos newCol model
-
-
-getToasts : Position -> Model -> List Toast
-getToasts pos model =
-  mainColumn model pos
-  |> .toasts
-
-
 newToast : Int -> String -> Toast
 newToast id message =
   { id = id
   , message = message
-  , style = Animation.style
-    [ Animation.marginTop (Animation.px 320)
-    , Animation.opacity 0.0
-    ]
-    |> Animation.interrupt
-      [ Animation.to
-        [ Animation.marginTop (Animation.px 20)
-        , Animation.opacity 1.0
-        ]
-      ]
   }
-
-
-applyToastStyle : Position -> Int -> Animation.Msg -> Model -> Model
-applyToastStyle pos id anim model =
-  let
-      tMapper t =
-        if t.id == id then
-          { t | style = Animation.update anim t.style }
-        else
-          t
-  in
-      model
-      |> mapToasts tMapper pos
 
 
 appendToast : Position -> Model -> Model
@@ -172,25 +132,10 @@ update msg model =
 
     IgnoreKey -> (model, Cmd.none)
 
-    AnimateEnteringToast pos id anim ->
-      model
-      |> applyToastStyle pos id anim
-      |> addCmds Cmd.none
-
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  let
-      subsToEntering pos =
-        getToasts pos model
-        |> List.map (\t -> Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
-  in
-    [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
-    , subsToEntering Left
-    , subsToEntering Right
-    ]
-    |> List.concat
-    |> Sub.batch
+  Sub.map keyStringToMsg (onKeyPress containerDecoder)
 
 
 containerDecoder : Decoder String
@@ -236,19 +181,14 @@ viewColumn : Column -> Element Msg
 viewColumn col =
   col.toasts
     |> List.map viewToast
-    |> Element.column [ width (px 300), padding 30, alignTop ]
-      )
+    |> Element.column [ width (px 300), padding 30, spacing 20, alignTop ]
 
 
 viewToast : Toast -> Element Msg
 viewToast toast =
   toast.message
     |> Element.text
-    |> Element.el
-      (List.append
-        [ padding 30, Background.color (rgb 0.8 0.8 0.8), centerX ]
-        (List.map Element.htmlAttribute (Animation.render toast.style))
-      )
+    |> Element.el [ padding 30, Background.color (rgb 0.8 0.8 0.8), centerX ]
 
 
 
