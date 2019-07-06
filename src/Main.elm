@@ -21,8 +21,7 @@ main =
 
 
 type alias Toast =
-  { id : Int
-  , message : String
+  { message : String
   }
 
 
@@ -84,10 +83,9 @@ setMainColumn pos col model =
     Right -> { model | right = col }
 
 
-newToast : Int -> String -> Toast
-newToast id message =
-  { id = id
-  , message = message
+newToast : String -> Toast
+newToast message =
+  { message = message
   }
 
 
@@ -101,7 +99,7 @@ appendToast pos model =
           String.append "Left " (String.fromInt newId)
         else
           String.append "Right " (String.fromInt newId)
-      toast = newToast newId message
+      toast = newToast message
   in
       model
       |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
