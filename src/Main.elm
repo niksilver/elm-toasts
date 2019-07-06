@@ -29,15 +29,12 @@ type alias Toast =
 
 type alias Column =
     { toasts : List Toast
-    , style : Animation.State
     }
 
 
 type alias Model =
   { left : Column
-  , leftExiting : Column
   , right : Column
-  , rightExiting : Column
   , toastCount : Int
   }
 
@@ -45,20 +42,13 @@ type alias Model =
 emptyColumn : Column
 emptyColumn =
   { toasts = []
-  , style =
-      Animation.style
-        [ Animation.marginTop (Animation.px 0)
-        , Animation.opacity 1.0
-        ]
   }
 
 
 init : () -> (Model, Cmd Msg)
 init flags =
   ( { left = emptyColumn
-    , leftExiting = emptyColumn
     , right = emptyColumn
-    , rightExiting = emptyColumn
     , toastCount = 0
     }
   , Cmd.none
@@ -72,7 +62,6 @@ type Msg
   = DisposeOfColumn Position
   | AddToast Position
   | IgnoreKey
-  | AnimateExitingColumn Position Animation.Msg
   | AnimateEnteringToast Position Int Animation.Msg
 
 
@@ -81,13 +70,6 @@ mainColumn model pos =
   case pos of
     Left -> model.left
     Right -> model.right
-
-
-exitingColumn : Model -> Position -> Column
-exitingColumn model pos =
-  case pos of
-    Left -> model.leftExiting
-    Right -> model.rightExiting
 
 
 incrementToastCount : Model -> Model
@@ -165,12 +147,6 @@ appendToast pos model =
       |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
 
 
-setExitingColumn : Position -> Column -> Model -> Model
-setExitingColumn pos col model =
-  case pos of
-    Left -> { model | leftExiting = col }
-    Right -> { model | rightExiting = col }
-
 
 addCmds : Cmd Msg -> Model -> (Model, Cmd Msg)
 addCmds cmds model =
@@ -186,17 +162,7 @@ update msg model =
       in
           model
           |> setMainColumn pos emptyColumn
-          |> setExitingColumn pos
-               { toasts = mainCol.toasts
-               , style = Animation.interrupt
-                  [ Animation.to
-                    [ Animation.marginTop (Animation.px -300)
-                    , Animation.opacity 0
-                    ]
-                  ]
-                  mainCol.style
-               }
-         |> addCmds Cmd.none
+          |> addCmds Cmd.none
 
     AddToast pos ->
           model
@@ -205,15 +171,6 @@ update msg model =
           |> addCmds Cmd.none
 
     IgnoreKey -> (model, Cmd.none)
-
-    AnimateExitingColumn pos anim ->
-      let
-          col = exitingColumn model pos
-          newStyle = Animation.update anim col.style
-      in
-          model
-          |> setExitingColumn pos { col | style = newStyle }
-          |> addCmds Cmd.none
 
     AnimateEnteringToast pos id anim ->
       model
@@ -224,18 +181,11 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   let
-      subsToExiting pos =
-        let
-            col = exitingColumn model pos
-        in
-            [ Animation.subscription (AnimateExitingColumn pos) [ col.style ] ]
       subsToEntering pos =
         getToasts pos model
         |> List.map (\t -> Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
   in
     [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
-    , subsToExiting Left
-    , subsToExiting Right
     , subsToEntering Left
     , subsToEntering Right
     ]
@@ -275,30 +225,18 @@ viewInstructions =
 
 viewMainModel : Model -> Element Msg
 viewMainModel model =
-  [ viewOverlaidColumns model.left model.leftExiting
-  , viewOverlaidColumns model.right model.rightExiting
+  [ viewColumn model.left
+  , viewColumn model.right
   ]
     |> Element.row []
 
-
-viewOverlaidColumns : Column -> Column -> Element Msg
-viewOverlaidColumns col exitingCol =
-  let
-      topEl = viewColumn exitingCol
-  in
-      Element.column [Element.inFront topEl, alignTop] [viewColumn col]
 
 
 viewColumn : Column -> Element Msg
 viewColumn col =
   col.toasts
     |> List.map viewToast
-    |> Element.column
-      (List.append
-        [ width (px 300)
-        , padding 30
-        ]
-        (List.map Element.htmlAttribute (Animation.render col.style))
+    |> Element.column [ width (px 300), padding 30, alignTop ]
       )
 
 
@@ -312,50 +250,5 @@ viewToast toast =
         (List.map Element.htmlAttribute (Animation.render toast.style))
       )
 
-
-{- ---------------------------------------------------------------------
-   Debug utilities
-   -----------------------------------------------------------------------}
-
-
-modelToString : Model -> String
-modelToString model =
-  String.concat
-    [ " left = "
-    , columnToString model.left
-    , ", leftExiting = "
-    , columnToString model.leftExiting
-    , ", right = "
-    , columnToString model.right
-    , ", rightExiting = "
-    , columnToString model.rightExiting
-    , "}"
-    ]
-
-
-columnToString : Column -> String
-columnToString col =
-  String.concat
-    [ "{ toasts = "
-    , toastListToString col.toasts
-    , ", style = ... }"
-    ]
-
-toastListToString : List Toast -> String
-toastListToString toasts =
-  String.concat
-    [ "["
-    , List.map toastToString toasts |> String.join ", "
-    , "]"
-    ]
-
-
-toastToString : Toast -> String
-toastToString toast =
-  String.concat
-    [ "{...\""
-    , toast.message
-    , "\"...}"
-    ]
 
 
