@@ -1,0 +1,331 @@
+@title Elm toasts - Introducing animation to an application
+
+@code_type Elm .elm
+
+@s Overview
+
+We want to show (and learn) how to introduce animation to an
+application that already works perfectly well. We will
+introduce both entry and exit animations, as they need
+different techniques.
+
+Our application will have two columns blocks, which both start
+out empty. We can add a "toast" to a column, so that each can
+build up, and we can dispose of an entire column.
+At a later point we will animate this adding and disposing,
+but initially we'll just make it basically work.
+
+@s Top level structure
+
+As usual, the structure of our program is:
+
+--- Main2.elm
+@{Imports}
+
+@{Type definitions}
+
+@{Functions}
+---
+
+@s Main model
+
+The main model will be:
+ * A toast, which is distinguished by some message;
+ * A column, which is a list of toasts; and
+ * The overall model, which is a left and right column, and a
+   count to allow each toast to get a unique message.
+
+--- Type definitions
+
+type alias Toast =
+  { message : String
+  }
+
+type alias Column =
+  { toasts : List Toast
+  }
+
+type alias Model =
+  { left : Column
+  , right : Column
+  , toastCount : Int
+  }
+
+---
+
+@s Making it an embedded application
+
+The Elm app will be embedded on a page, so we'll need the usual
+definition:
+
+--- Functions
+
+main =
+  Browser.element
+    { init = init
+    , update = update
+    , subscriptions = subscriptions
+    , view = view
+    }
+
+
+---
+
+And therefore we'll need to import the Browser package:
+
+--- Imports
+import Browser
+---
+
+@s Initialisation
+
+The initial model is two empty columns:
+
+--- Functions +=
+
+init : () -> (Model, Cmd Msg)
+init flags =
+  { left = emptyColumn
+  , right = emptyColumn
+  , toastCount = 0
+  }
+  |> addNoCmd
+
+
+emptyColumn : Column
+emptyColumn =
+  { toasts = []
+  }
+
+
+addNoCmd : Model -> (Model, Cmd Msg)
+addNoCmd model =
+  (model, Cmd.none)
+  
+
+---
+
+@s The update
+
+To update our model we'll need to take four messages: dispose left/right
+and add a toast left/right. But we'll also need to handle an unwanted
+key.
+
+--- Type definitions +=
+
+type Position = Left | Right
+
+
+type Msg =
+  DisposeOfColumn Position
+  | AddToast Position
+  | IgnoreKey
+
+---
+
+--- Functions +=
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+    DisposeOfColumn pos ->
+      let
+          col = column pos model
+      in
+          model
+          |> setColumn pos emptyColumn
+          |> addNoCmd
+
+    AddToast pos ->
+      let
+          col = column pos model
+          toast = makeToast pos model.toastCount
+          newCol = addToast toast col
+      in
+          model
+          |> setColumn pos newCol
+          |> incrementCounter
+          |> addNoCmd
+
+    IgnoreKey ->
+      (model, Cmd.none)
+
+---
+
+Now here are those worker functions:
+
+--- Functions +=
+
+column : Position -> Model -> Column
+column pos model =
+  case pos of
+    Left -> model.left
+
+    Right -> model.right
+
+
+setColumn : Position -> Column -> Model -> Model
+setColumn pos col model =
+  case pos of
+    Left ->
+      { model | left = col }
+
+    Right ->
+      { model | right = col }
+
+
+makeToast : Position -> Int -> Toast
+makeToast pos count =
+  case pos of
+    Left ->
+      { message = "Left " ++ (String.fromInt count) }
+
+    Right ->
+      { message = "Right " ++ (String.fromInt count) }
+
+
+addToast : Toast -> Column -> Column
+addToast toast col =
+  { toasts = List.append col.toasts [ toast ] }
+
+
+incrementCounter : Model -> Model
+incrementCounter model =
+  { model
+  | toastCount = model.toastCount + 1
+  }
+
+
+---
+
+@s The subscriptions
+
+To listen out for key presses we use the
+[`onKeyPress`](https://package.elm-lang.org/packages/elm/browser/latest/Browser-Events#onKeyPress)
+method from the `Browser` package.
+This takes a JSON decoder to a string (the key pressed)
+and returns a subscription to the string.
+However, we want a subscription to our `Msg`, so we need to map it.
+
+Here is the JSON decoder ripped out of
+[Elm's own documentation](https://github.com/elm/browser/blob/1.0.0/notes/keyboard.md#which-key-was-pressed):
+
+--- Imports +=
+import Json.Decode as Decode
+---
+
+--- Functions +=
+
+keyDecoder : Decode.Decoder String
+keyDecoder =
+  Decode.field "key" Decode.string
+
+
+---
+
+Here's the mapping from key string to `Msg`:
+
+--- Functions +=
+
+keyStringToMsg : String -> Msg
+keyStringToMsg keyString =
+  case keyString of
+    "q" -> DisposeOfColumn Left
+    "w" -> DisposeOfColumn Right
+    "z" -> AddToast Left
+    "x" -> AddToast Right
+    _ -> IgnoreKey
+
+
+---
+
+And finally we can put those two together to get our subscription
+function:
+
+--- Imports +=
+import Browser.Events
+---
+
+--- Functions +=
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Browser.Events.onKeyPress keyDecoder
+  |> Sub.map keyStringToMsg
+
+
+---
+
+@s The view
+
+So, finally, we need to create our view. We'll used the
+[Elm UI package by mdgriffith](https://github.com/mdgriffith/elm-ui)
+because that makes layout really intuitive. It's just columns
+and rows, plus padding (outside a box) and spacing (inside a box).
+
+The layout is:
+* A single column with
+  * Text instructions;
+  * The main content, which is one row of two element side by side:
+    * The left column
+      * Which is a column of toasts
+    * The right column
+      * Which is a column of toasts.
+
+The syntax for these functions is `funcName styles elements`.
+
+--- Functions +=
+
+view : Model -> Html Msg
+view model =
+  Element.column []
+    [ viewInstructions
+    , viewMainModel model
+    ]
+    |> Element.layout []
+
+viewInstructions : Element Msg
+viewInstructions =
+  Element.el [Element.padding 30]
+    (Element.text "Use 'z' and x' to add a message, 'q' and 'w' to dispose of a column of messages")
+
+
+viewMainModel : Model -> Element Msg
+viewMainModel model =
+  Element.row []
+    [ viewColumn model.left
+    , viewColumn model.right
+    ]
+
+
+viewColumn : Column -> Element Msg
+viewColumn col =
+  Element.column [ width (px 300), padding 30, spacing 20, alignTop ]
+    (toastViews col)
+
+
+toastViews : Column -> List (Element Msg)
+toastViews col =
+  List.map viewToast col.toasts
+
+
+viewToast : Toast -> Element Msg
+viewToast toast =
+  Element.el [ padding 30, Background.color (rgb 0.8 0.8 0.8), centerX ]
+    (Element.text toast.message)
+
+
+---
+
+And that means we have to add these imports
+--- Imports +=
+import Html exposing (Html)
+import Element
+import Element exposing
+  ( Element
+  , width, padding, spacing
+  , px, rgb
+  , centerX, alignTop)
+import Element.Background as Background
+---
+
