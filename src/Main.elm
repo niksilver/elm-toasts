@@ -26,8 +26,8 @@ type alias Toast =
 
 
 type alias Column =
-    { toasts : List Toast
-    }
+  { toasts : List Toast
+  }
 
 
 type alias Model =
