@@ -94,6 +94,7 @@ but initially we'll just make it basically work.
 
 type alias Toast =
   { message : String
+<span class="nocode pln">  {More Toast type fields, <a href="Main.html#1:9">9</a>}</span>
   }
 
 type alias Column =
@@ -120,7 +121,6 @@ definition:
 <div class="codeblock">
 <span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>}</span>
 <pre class="prettyprint lang-elm">
-
 main =
   Browser.element
     { init = init
@@ -131,7 +131,7 @@ main =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -143,7 +143,7 @@ main =
 <pre class="prettyprint lang-elm">
 import Browser
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a> and <a href="Main.html#1:9">9</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -155,7 +155,6 @@ import Browser
 <div class="codeblock">
 <span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
 <pre class="prettyprint lang-elm">
-
 init : () -&gt; (Model, Cmd Msg)
 init flags =
   { left = emptyColumn
@@ -177,7 +176,7 @@ addNoCmd model =
   
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -199,6 +198,7 @@ type Msg =
   DisposeOfColumn Position
   | AddToast Position
   | IgnoreKey
+<span class="nocode pln">  {More Msgs, <a href="Main.html#1:11">11</a>}</span>
 
 </pre>
 
@@ -209,7 +209,6 @@ type Msg =
 <div class="codeblock">
 <span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
 <pre class="prettyprint lang-elm">
-
 update : Msg -&gt; Model -&gt; (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -235,8 +234,11 @@ update msg model =
     IgnoreKey -&gt;
       (model, Cmd.none)
 
+<span class="nocode pln">    {More model updates, <a href="Main.html#1:12">12</a>}</span>
+
+
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -246,7 +248,6 @@ update msg model =
 <div class="codeblock">
 <span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
 <pre class="prettyprint lang-elm">
-
 column : Position -&gt; Model -&gt; Column
 column pos model =
   case pos of
@@ -267,12 +268,15 @@ setColumn pos col model =
 
 makeToast : Position -&gt; Int -&gt; Toast
 makeToast pos count =
-  case pos of
-    Left -&gt;
-      { message = "Left " ++ (String.fromInt count) }
-
-    Right -&gt;
-      { message = "Right " ++ (String.fromInt count) }
+  let
+      message =
+        case pos of
+          Left -&gt; "Left " ++ (String.fromInt count)
+          Right -&gt; "Right " ++ (String.fromInt count)
+  in
+    { message = message
+<span class="nocode pln">    {More Toast creation fields, <a href="Main.html#1:14">14</a>}</span>
+    }
 
 
 addToast : Toast -&gt; Column -&gt; Column
@@ -288,7 +292,7 @@ incrementCounter model =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -310,7 +314,7 @@ However, we want a subscription to our <code>Msg</code>, so we need to map it.
 <pre class="prettyprint lang-elm">
 import Json.Decode as Decode
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a> and <a href="Main.html#1:9">9</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -318,14 +322,13 @@ import Json.Decode as Decode
 <div class="codeblock">
 <span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
 <pre class="prettyprint lang-elm">
-
 keyDecoder : Decode.Decoder String
 keyDecoder =
   Decode.field "key" Decode.string
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -335,7 +338,6 @@ keyDecoder =
 <div class="codeblock">
 <span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
 <pre class="prettyprint lang-elm">
-
 keyStringToMsg : String -&gt; Msg
 keyStringToMsg keyString =
   case keyString of
@@ -347,7 +349,7 @@ keyStringToMsg keyString =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -360,7 +362,7 @@ function:
 <pre class="prettyprint lang-elm">
 import Browser.Events
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a> and <a href="Main.html#1:9">9</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -368,18 +370,29 @@ import Browser.Events
 <div class="codeblock">
 <span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
 <pre class="prettyprint lang-elm">
-
 subscriptions : Model -&gt; Sub Msg
 subscriptions model =
-  Browser.Events.onKeyPress keyDecoder
-  |&gt; Sub.map keyStringToMsg
+  let
+<span class="nocode pln">      {subscriptions assignments, <a href="Main.html#1:11">11</a>}</span>
+  in
+    [ [ Browser.Events.onKeyPress keyDecoder |&gt; Sub.map keyStringToMsg ]
+<span class="nocode pln">    {More subscription lists, <a href="Main.html#1:11">11</a>}</span>
+    ]
+    |&gt; List.concat
+    |&gt; Sub.batch
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
+<p>Notice we've slightly over-egged this by concatenting lists of
+(batched) subscriptions---and we're only using a singleton list!
+That's because we'll want to add more subscriptions (lists of subscriptions)
+later.
+</p>
+
 </div>
 <a name="1:8"><div class="section"><h4>8. The view</h4></a>
 <p>So, finally, we need to create our view. We'll used the
@@ -413,7 +426,6 @@ and rows, plus padding (outside a box) and spacing (inside a box).
 <div class="codeblock">
 <span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
 <pre class="prettyprint lang-elm">
-
 view : Model -&gt; Html Msg
 view model =
   Element.column []
@@ -449,12 +461,20 @@ toastViews col =
 
 viewToast : Toast -&gt; Element Msg
 viewToast toast =
-  Element.el [ padding 30, Background.color (rgb 0.8 0.8 0.8), centerX ]
-    (Element.text toast.message)
+  toast.message
+  |&gt; Element.text
+  |&gt; Element.el
+    (List.concat
+      [ [padding 30]
+      , [Background.color (rgb 0.8 0.8 0.8)]
+      , [centerX]
+<span class="nocode pln">      {More Toast stylings, <a href="Main.html#1:13">13</a>}</span>
+      ]
+    )
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:7">7</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
@@ -473,10 +493,244 @@ import Element exposing
   , centerX, alignTop)
 import Element.Background as Background
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a> and <a href="Main.html#1:7">7</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:9">9</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
 </div>
+</div>
+<a name="1:9"><div class="section"><h4>9. Entrance animation</h4></a>
+<p>The first animation we'll add is the entrance animation for a new toast.
+To animate each toast individually we'll have to add an ID to each one:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{More Toast type fields <a href="Main.html#1:9">9</a>}</span>
+<pre class="prettyprint lang-elm">
+  , id : Int
+</pre>
+<p class="seealso">Added to in section <a href="Main.html#1:10">10</a></p>
+
+<p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
+</div>
+<p>To help with animation, we're going to use
+<a href="https://github.com/mdgriffith/elm-style-animation">M D Griffiths's elm-style-animation</a>:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{Imports <a href="Main.html#1:4">4</a>} +=</span>
+<pre class="prettyprint lang-elm">
+import Animation
+</pre>
+<p class="seealso">Added to in sections <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a> and <a href="Main.html#1:8">8</a></p>
+
+<p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
+</div>
+<p>The entrance animation is a toast which starts transparent, and
+flies up, becoming more opaque as it arrives at its final place.
+</p>
+<p>According to the <code>Animations</code>'s
+documentation there we need to implement it in these steps:
+</p>
+<ul>
+<li>Set an initial style in our model
+</li>
+<li>Subscribe to Animation's subscription
+</li>
+<li>Set up an update Msg
+</li>
+<li>Render our animation
+</li>
+<li>Start an animation in our update statement
+</li>
+</ul>
+<p>So here we go...
+</p>
+
+</div>
+<a name="1:10"><div class="section"><h4>10. Set an initial entrance style in our model</h4></a>
+<p>We are styling a toast, and several may fly in in quick succession,
+so we need to make sure each <code>Toast</code> has a style field:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{More Toast type fields <a href="Main.html#1:9">9</a>} +=</span>
+<pre class="prettyprint lang-elm">
+  , style : Animation.State
+</pre>
+
+
+<p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
+</div>
+<p>Since there are no toasts in the initial model, there's nothing left to
+do for this stage.
+</p>
+
+</div>
+<a name="1:11"><div class="section"><h4>11. Subscribe to Animation's subscription</h4></a>
+<p>To react to animation messages we need a message
+for the next frame of its entrance. The message has to identify the
+toast with its column (left/right) and its ID, and carry the <code>Animation</code>
+message itself. We add it to our <code>Msg</code>s:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{More Msgs <a href="Main.html#1:11">11</a>}</span>
+<pre class="prettyprint lang-elm">
+  | AnimateEnteringToast Position Int Animation.Msg
+</pre>
+
+
+<p class="seealso">Used in section <a href="Main.html#1:6">6</a></p>
+</div>
+<p>Then we want subscriptions for all the animation messages for all the
+toasts on the left, and all the toasts on the right.
+We can create a function for this (given a position left/right)
+which we'll add inside the <code>subscriptions</code> function's let/in clause:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{subscriptions assignments <a href="Main.html#1:11">11</a>}</span>
+<pre class="prettyprint lang-elm">
+      subsToEntering pos =
+        getToasts pos model
+        |&gt; List.map (\t -&gt; Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
+</pre>
+
+
+<p class="seealso">Used in section <a href="Main.html#1:7">7</a></p>
+</div>
+<p>were we define
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
+<pre class="prettyprint lang-elm">
+getToasts : Position -&gt; Model -&gt; List Toast
+getToasts pos model =
+  column pos model
+  |&gt; .toasts
+
+
+</pre>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a> and <a href="Main.html#1:12">12</a></p>
+
+<p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
+</div>
+<p>And then we can subscribe to all of them on the left and the right:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{More subscription lists <a href="Main.html#1:11">11</a>}</span>
+<pre class="prettyprint lang-elm">
+    , subsToEntering Left
+    , subsToEntering Right
+</pre>
+
+
+<p class="seealso">Used in section <a href="Main.html#1:7">7</a></p>
+</div>
+</div>
+<a name="1:12"><div class="section"><h4>12. Set an entrance update Msg</h4></a>
+<p>To update our model when we get one of these messages we'll put a response
+in the <code>update</code> function and the guts of the work in its own function:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{More model updates <a href="Main.html#1:12">12</a>}</span>
+<pre class="prettyprint lang-elm">
+AnimateEnteringToast pos id anim -&gt;
+  model
+  |&gt; applyToastStyle pos id anim
+  |&gt; addNoCmd
+
+</pre>
+
+
+<p class="seealso">Used in section <a href="Main.html#1:6">6</a></p>
+</div>
+<p>And the function to apply the animation message (styling). It just
+runs through the model leaves all the toasts the same, apart from
+the one with the given ID. It also needs a new helper functions to
+map the toasts in a column with a given function.
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{Functions <a href="Main.html#1:4">4</a>} +=</span>
+<pre class="prettyprint lang-elm">
+applyToastStyle : Position -&gt; Int -&gt; Animation.Msg -&gt; Model -&gt; Model
+applyToastStyle pos id anim model =
+  let
+      tMapper t =
+        if t.id == id then
+          { t | style = Animation.update anim t.style }
+        else
+          t
+  in
+      model
+      |&gt; mapToasts tMapper pos
+
+
+mapToasts : (Toast -&gt; Toast) -&gt; Position -&gt; Model -&gt; Model
+mapToasts tMapper pos model =
+  let
+      col = column pos model
+      newCol = { col | toasts = List.map tMapper col.toasts }
+  in
+      setColumn pos newCol model
+
+
+</pre>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:6">6</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a> and <a href="Main.html#1:11">11</a></p>
+
+<p class="seealso">Used in section <a href="Main.html#1:2">2</a></p>
+</div>
+</div>
+<a name="1:13"><div class="section"><h4>13. Render our entrance animation</h4></a>
+<p>For our view logic we just have to add to a toast the stylings that
+come from the animation message. But we have to convert each one
+from "pure" HTML to a something suitable for the <code>Element</code> package
+we're using:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{More Toast stylings <a href="Main.html#1:13">13</a>}</span>
+<pre class="prettyprint lang-elm">
+, (List.map Element.htmlAttribute (Animation.render toast.style))
+</pre>
+
+
+<p class="seealso">Used in section <a href="Main.html#1:8">8</a></p>
+</div>
+</div>
+<a name="1:14"><div class="section"><h4>14. Start an entrance animation in our update statement</h4></a>
+<p>We start an entrance animation when we need to create a new toast.
+So the toast should be given its ID (so we can identify it for its
+unique animation state) and its initial style. We have to choose
+<code>Animation.queue</code> or <code>Animation.interrupt</code> and in this case we choose
+the latter:
+</p>
+
+<div class="codeblock">
+<span class="codeblock_name">{More Toast creation fields <a href="Main.html#1:14">14</a>}</span>
+<pre class="prettyprint lang-elm">
+  , id = count
+  , style = Animation.style
+    [ Animation.marginTop (Animation.px 320)
+    , Animation.opacity 0.0
+    ]
+    |&gt; Animation.interrupt
+      [ Animation.to
+        [ Animation.marginTop (Animation.px 20)
+        , Animation.opacity 1.0
+        ]
+      ]
+</pre>
+
+
+<p class="seealso">Used in section <a href="Main.html#1:6">6</a></p>
+</div>
+<p>And that should be it for the entrance animations.
+</p>
 
 </div>
 </body>

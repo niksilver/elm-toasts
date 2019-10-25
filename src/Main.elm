@@ -21,18 +21,23 @@ main =
 
 
 type alias Toast =
-  { message : String
+  { id : Int
+  , message : String
+  , style : Animation.State
   }
 
 
 type alias Column =
-  { toasts : List Toast
-  }
+    { toasts : List Toast
+    , style : Animation.State
+    }
 
 
 type alias Model =
   { left : Column
+  , leftExiting : Column
   , right : Column
+  , rightExiting : Column
   , toastCount : Int
   }
 
@@ -40,13 +45,20 @@ type alias Model =
 emptyColumn : Column
 emptyColumn =
   { toasts = []
+  , style =
+      Animation.style
+        [ Animation.marginTop (Animation.px 0)
+        , Animation.opacity 1.0
+        ]
   }
 
 
 init : () -> (Model, Cmd Msg)
 init flags =
   ( { left = emptyColumn
+    , leftExiting = emptyColumn
     , right = emptyColumn
+    , rightExiting = emptyColumn
     , toastCount = 0
     }
   , Cmd.none
@@ -60,6 +72,8 @@ type Msg
   = DisposeOfColumn Position
   | AddToast Position
   | IgnoreKey
+  | AnimateExitingColumn Position Animation.Msg
+  | AnimateEnteringToast Position Int Animation.Msg
 
 
 mainColumn : Model -> Position -> Column
@@ -67,6 +81,13 @@ mainColumn model pos =
   case pos of
     Left -> model.left
     Right -> model.right
+
+
+exitingColumn : Model -> Position -> Column
+exitingColumn model pos =
+  case pos of
+    Left -> model.leftExiting
+    Right -> model.rightExiting
 
 
 incrementToastCount : Model -> Model
@@ -83,10 +104,49 @@ setMainColumn pos col model =
     Right -> { model | right = col }
 
 
-newToast : String -> Toast
-newToast message =
-  { message = message
+mapToasts : (Toast -> Toast) -> Position -> Model -> Model
+mapToasts tMapper pos model =
+  let
+      col = mainColumn model pos
+      newCol = { col | toasts = List.map tMapper col.toasts }
+  in
+      setMainColumn pos newCol model
+
+
+getToasts : Position -> Model -> List Toast
+getToasts pos model =
+  mainColumn model pos
+  |> .toasts
+
+
+newToast : Int -> String -> Toast
+newToast id message =
+  { id = id
+  , message = message
+  , style = Animation.style
+    [ Animation.marginTop (Animation.px 320)
+    , Animation.opacity 0.0
+    ]
+    |> Animation.interrupt
+      [ Animation.to
+        [ Animation.marginTop (Animation.px 20)
+        , Animation.opacity 1.0
+        ]
+      ]
   }
+
+
+applyToastStyle : Position -> Int -> Animation.Msg -> Model -> Model
+applyToastStyle pos id anim model =
+  let
+      tMapper t =
+        if t.id == id then
+          { t | style = Animation.update anim t.style }
+        else
+          t
+  in
+      model
+      |> mapToasts tMapper pos
 
 
 appendToast : Position -> Model -> Model
@@ -99,11 +159,17 @@ appendToast pos model =
           String.append "Left " (String.fromInt newId)
         else
           String.append "Right " (String.fromInt newId)
-      toast = newToast message
+      toast = newToast newId message
   in
       model
       |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
 
+
+setExitingColumn : Position -> Column -> Model -> Model
+setExitingColumn pos col model =
+  case pos of
+    Left -> { model | leftExiting = col }
+    Right -> { model | rightExiting = col }
 
 
 addCmds : Cmd Msg -> Model -> (Model, Cmd Msg)
@@ -120,7 +186,17 @@ update msg model =
       in
           model
           |> setMainColumn pos emptyColumn
-          |> addCmds Cmd.none
+          |> setExitingColumn pos
+               { toasts = mainCol.toasts
+               , style = Animation.interrupt
+                  [ Animation.to
+                    [ Animation.marginTop (Animation.px -300)
+                    , Animation.opacity 0
+                    ]
+                  ]
+                  mainCol.style
+               }
+         |> addCmds Cmd.none
 
     AddToast pos ->
           model
@@ -130,10 +206,41 @@ update msg model =
 
     IgnoreKey -> (model, Cmd.none)
 
+    AnimateExitingColumn pos anim ->
+      let
+          col = exitingColumn model pos
+          newStyle = Animation.update anim col.style
+      in
+          model
+          |> setExitingColumn pos { col | style = newStyle }
+          |> addCmds Cmd.none
+
+    AnimateEnteringToast pos id anim ->
+      model
+      |> applyToastStyle pos id anim
+      |> addCmds Cmd.none
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.map keyStringToMsg (onKeyPress containerDecoder)
+  let
+      subsToExiting pos =
+        let
+            col = exitingColumn model pos
+        in
+            [ Animation.subscription (AnimateExitingColumn pos) [ col.style ] ]
+      subsToEntering pos =
+        getToasts pos model
+        |> List.map (\t -> Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
+  in
+    [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
+    , subsToExiting Left
+    , subsToExiting Right
+    , subsToEntering Left
+    , subsToEntering Right
+    ]
+    |> List.concat
+    |> Sub.batch
 
 
 containerDecoder : Decoder String
@@ -168,25 +275,87 @@ viewInstructions =
 
 viewMainModel : Model -> Element Msg
 viewMainModel model =
-  [ viewColumn model.left
-  , viewColumn model.right
+  [ viewOverlaidColumns model.left model.leftExiting
+  , viewOverlaidColumns model.right model.rightExiting
   ]
     |> Element.row []
 
+
+viewOverlaidColumns : Column -> Column -> Element Msg
+viewOverlaidColumns col exitingCol =
+  let
+      topEl = viewColumn exitingCol
+  in
+      Element.column [Element.inFront topEl, alignTop] [viewColumn col]
 
 
 viewColumn : Column -> Element Msg
 viewColumn col =
   col.toasts
     |> List.map viewToast
-    |> Element.column [ width (px 300), padding 30, spacing 20, alignTop ]
+    |> Element.column
+      (List.append
+        [ width (px 300)
+        , padding 30
+        ]
+        (List.map Element.htmlAttribute (Animation.render col.style))
+      )
 
 
 viewToast : Toast -> Element Msg
 viewToast toast =
   toast.message
     |> Element.text
-    |> Element.el [ padding 30, Background.color (rgb 0.8 0.8 0.8), centerX ]
+    |> Element.el
+      (List.append
+        [ padding 30, Background.color (rgb 0.8 0.8 0.8), centerX ]
+        (List.map Element.htmlAttribute (Animation.render toast.style))
+      )
 
+
+{- ---------------------------------------------------------------------
+   Debug utilities
+   -----------------------------------------------------------------------}
+
+
+modelToString : Model -> String
+modelToString model =
+  String.concat
+    [ " left = "
+    , columnToString model.left
+    , ", leftExiting = "
+    , columnToString model.leftExiting
+    , ", right = "
+    , columnToString model.right
+    , ", rightExiting = "
+    , columnToString model.rightExiting
+    , "}"
+    ]
+
+
+columnToString : Column -> String
+columnToString col =
+  String.concat
+    [ "{ toasts = "
+    , toastListToString col.toasts
+    , ", style = ... }"
+    ]
+
+toastListToString : List Toast -> String
+toastListToString toasts =
+  String.concat
+    [ "["
+    , List.map toastToString toasts |> String.join ", "
+    , "]"
+    ]
+
+
+toastToString : Toast -> String
+toastToString toast =
+  String.concat
+    [ "{...\""
+    , toast.message
+    , "\"...}"
+    ]
 
 

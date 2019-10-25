@@ -1,6 +1,7 @@
 @title Elm toasts - Introducing animation to an application
 
 @code_type Elm .elm
+@comment_type -- %s
 
 @s Overview
 
@@ -39,6 +40,7 @@ The main model will be:
 
 type alias Toast =
   { message : String
+  @{More Toast type fields}
   }
 
 type alias Column =
@@ -59,7 +61,6 @@ The Elm app will be embedded on a page, so we'll need the usual
 definition:
 
 --- Functions
-
 main =
   Browser.element
     { init = init
@@ -82,7 +83,6 @@ import Browser
 The initial model is two empty columns:
 
 --- Functions +=
-
 init : () -> (Model, Cmd Msg)
 init flags =
   { left = emptyColumn
@@ -120,11 +120,11 @@ type Msg =
   DisposeOfColumn Position
   | AddToast Position
   | IgnoreKey
+  @{More Msgs}
 
 ---
 
 --- Functions +=
-
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -150,12 +150,14 @@ update msg model =
     IgnoreKey ->
       (model, Cmd.none)
 
+    @{More model updates}
+
+
 ---
 
 Now here are those worker functions:
 
 --- Functions +=
-
 column : Position -> Model -> Column
 column pos model =
   case pos of
@@ -176,12 +178,15 @@ setColumn pos col model =
 
 makeToast : Position -> Int -> Toast
 makeToast pos count =
-  case pos of
-    Left ->
-      { message = "Left " ++ (String.fromInt count) }
-
-    Right ->
-      { message = "Right " ++ (String.fromInt count) }
+  let
+      message =
+        case pos of
+          Left -> "Left " ++ (String.fromInt count)
+          Right -> "Right " ++ (String.fromInt count)
+  in
+    { message = message
+    @{More Toast creation fields}
+    }
 
 
 addToast : Toast -> Column -> Column
@@ -215,7 +220,6 @@ import Json.Decode as Decode
 ---
 
 --- Functions +=
-
 keyDecoder : Decode.Decoder String
 keyDecoder =
   Decode.field "key" Decode.string
@@ -226,7 +230,6 @@ keyDecoder =
 Here's the mapping from key string to `Msg`:
 
 --- Functions +=
-
 keyStringToMsg : String -> Msg
 keyStringToMsg keyString =
   case keyString of
@@ -247,14 +250,24 @@ import Browser.Events
 ---
 
 --- Functions +=
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Browser.Events.onKeyPress keyDecoder
-  |> Sub.map keyStringToMsg
+  let
+      @{subscriptions assignments}
+  in
+    [ [ Browser.Events.onKeyPress keyDecoder |> Sub.map keyStringToMsg ]
+    @{More subscription lists}
+    ]
+    |> List.concat
+    |> Sub.batch
 
 
 ---
+
+Notice we've slightly over-egged this by concatenting lists of
+(batched) subscriptions---and we're only using a singleton list!
+That's because we'll want to add more subscriptions (lists of subscriptions)
+later.
 
 @s The view
 
@@ -275,7 +288,6 @@ The layout is:
 The syntax for these functions is `funcName styles elements`.
 
 --- Functions +=
-
 view : Model -> Html Msg
 view model =
   Element.column []
@@ -311,8 +323,16 @@ toastViews col =
 
 viewToast : Toast -> Element Msg
 viewToast toast =
-  Element.el [ padding 30, Background.color (rgb 0.8 0.8 0.8), centerX ]
-    (Element.text toast.message)
+  toast.message
+  |> Element.text
+  |> Element.el
+    (List.concat
+      [ [padding 30]
+      , [Background.color (rgb 0.8 0.8 0.8)]
+      , [centerX]
+      @{More Toast stylings}
+      ]
+    )
 
 
 ---
@@ -329,3 +349,161 @@ import Element exposing
 import Element.Background as Background
 ---
 
+@s Entrance animation
+
+The first animation we'll add is the entrance animation for a new toast.
+To animate each toast individually we'll have to add an ID to each one:
+
+--- More Toast type fields
+  , id : Int
+---
+
+To help with animation, we're going to use
+[M D Griffiths's elm-style-animation](https://github.com/mdgriffith/elm-style-animation):
+
+--- Imports +=
+import Animation
+---
+
+The entrance animation is a toast which starts transparent, and
+flies up, becoming more opaque as it arrives at its final place.
+
+According to the `Animations`'s
+documentation there we need to implement it in these steps:
+* Set an initial style in our model
+* Subscribe to Animation's subscription
+* Set up an update Msg
+* Render our animation
+* Start an animation in our update statement
+
+So here we go...
+
+@s Set an initial entrance style in our model
+
+We are styling a toast, and several may fly in in quick succession,
+so we need to make sure each `Toast` has a style field:
+
+--- More Toast type fields +=
+  , style : Animation.State
+---
+
+Since there are no toasts in the initial model, there's nothing left to
+do for this stage.
+
+@s Subscribe to Animation's subscription
+
+To react to animation messages we need a message
+for the next frame of its entrance. The message has to identify the
+toast with its column (left/right) and its ID, and carry the `Animation`
+message itself. We add it to our `Msg`s:
+
+--- More Msgs
+  | AnimateEnteringToast Position Int Animation.Msg
+---
+
+Then we want subscriptions for all the animation messages for all the
+toasts on the left, and all the toasts on the right.
+We can create a function for this (given a position left/right)
+which we'll add inside the `subscriptions` function's let/in clause:
+
+--- subscriptions assignments
+      subsToEntering pos =
+        getToasts pos model
+        |> List.map (\t -> Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
+---
+
+were we define
+
+--- Functions +=
+getToasts : Position -> Model -> List Toast
+getToasts pos model =
+  column pos model
+  |> .toasts
+
+
+---
+
+And then we can subscribe to all of them on the left and the right:
+
+--- More subscription lists
+    , subsToEntering Left
+    , subsToEntering Right
+---
+
+@s Set an entrance update Msg
+
+To update our model when we get one of these messages we'll put a response
+in the `update` function and the guts of the work in its own function:
+
+--- More model updates
+AnimateEnteringToast pos id anim ->
+  model
+  |> applyToastStyle pos id anim
+  |> addNoCmd
+
+---
+
+And the function to apply the animation message (styling). It just
+runs through the model leaves all the toasts the same, apart from
+the one with the given ID. It also needs a new helper functions to
+map the toasts in a column with a given function.
+
+--- Functions +=
+applyToastStyle : Position -> Int -> Animation.Msg -> Model -> Model
+applyToastStyle pos id anim model =
+  let
+      tMapper t =
+        if t.id == id then
+          { t | style = Animation.update anim t.style }
+        else
+          t
+  in
+      model
+      |> mapToasts tMapper pos
+
+
+mapToasts : (Toast -> Toast) -> Position -> Model -> Model
+mapToasts tMapper pos model =
+  let
+      col = column pos model
+      newCol = { col | toasts = List.map tMapper col.toasts }
+  in
+      setColumn pos newCol model
+
+
+---
+
+@s Render our entrance animation
+
+For our view logic we just have to add to a toast the stylings that
+come from the animation message. But we have to convert each one
+from "pure" HTML to a something suitable for the `Element` package
+we're using:
+
+--- More Toast stylings
+, (List.map Element.htmlAttribute (Animation.render toast.style))
+---
+
+@s Start an entrance animation in our update statement
+
+We start an entrance animation when we need to create a new toast.
+So the toast should be given its ID (so we can identify it for its
+unique animation state) and its initial style. We have to choose
+`Animation.queue` or `Animation.interrupt` and in this case we choose
+the latter:
+
+--- More Toast creation fields
+  , id = count
+  , style = Animation.style
+    [ Animation.marginTop (Animation.px 320)
+    , Animation.opacity 0.0
+    ]
+    |> Animation.interrupt
+      [ Animation.to
+        [ Animation.marginTop (Animation.px 20)
+        , Animation.opacity 1.0
+        ]
+      ]
+---
+
+And that should be it for the entrance animations.
