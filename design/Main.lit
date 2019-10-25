@@ -45,12 +45,14 @@ type alias Toast =
 
 type alias Column =
   { toasts : List Toast
+  @{More Column type fields}
   }
 
 type alias Model =
   { left : Column
   , right : Column
   , toastCount : Int
+  @{More Model fields}
   }
 
 ---
@@ -88,6 +90,7 @@ init flags =
   { left = emptyColumn
   , right = emptyColumn
   , toastCount = 0
+  @{More Model field initialisation}
   }
   |> addNoCmd
 
@@ -95,6 +98,7 @@ init flags =
 emptyColumn : Column
 emptyColumn =
   { toasts = []
+  @{More empty Column fields}
   }
 
 
@@ -134,6 +138,7 @@ update msg model =
       in
           model
           |> setColumn pos emptyColumn
+          @{More column disposal operations}
           |> addNoCmd
 
     AddToast pos ->
@@ -150,10 +155,13 @@ update msg model =
     IgnoreKey ->
       (model, Cmd.none)
 
-    @{More model updates}
+    @{More Model updates}
 
 
 ---
+
+(The assignment of `col` in the `DisposeOfColumn` clause above will be
+used in later stages.)
 
 Now here are those worker functions:
 
@@ -191,7 +199,7 @@ makeToast pos count =
 
 addToast : Toast -> Column -> Column
 addToast toast col =
-  { toasts = List.append col.toasts [ toast ] }
+  { col | toasts = List.append col.toasts [ toast ] }
 
 
 incrementCounter : Model -> Model
@@ -285,7 +293,7 @@ The layout is:
     * The right column
       * Which is a column of toasts.
 
-The syntax for these functions is `funcName styles elements`.
+The syntax for elm-ui's functions is `funcName styles elements`.
 
 --- Functions +=
 view : Model -> Html Msg
@@ -301,7 +309,11 @@ viewInstructions =
   Element.el [Element.padding 30]
     (Element.text "Use 'z' and x' to add a message, 'q' and 'w' to dispose of a column of messages")
 
+@{View main model function}
+@{View columns and toasts functions}
+---
 
+--- View main model function
 viewMainModel : Model -> Element Msg
 viewMainModel model =
   Element.row []
@@ -310,10 +322,19 @@ viewMainModel model =
     ]
 
 
+---
+
+--- View columns and toasts functions
 viewColumn : Column -> Element Msg
 viewColumn col =
-  Element.column [ width (px 300), padding 30, spacing 20, alignTop ]
-    (toastViews col)
+  toastViews col
+  |> Element.column
+    (List.concat
+      [ [width (px 300)]
+      , [padding 30]
+      @{More Column stylings}
+      ]
+    )
 
 
 toastViews : Column -> List (Element Msg)
@@ -368,7 +389,7 @@ import Animation
 The entrance animation is a toast which starts transparent, and
 flies up, becoming more opaque as it arrives at its final place.
 
-According to the `Animations`'s
+According to `Animations`'s
 documentation there we need to implement it in these steps:
 * Set an initial style in our model
 * Subscribe to Animation's subscription
@@ -435,7 +456,7 @@ And then we can subscribe to all of them on the left and the right:
 To update our model when we get one of these messages we'll put a response
 in the `update` function and the guts of the work in its own function:
 
---- More model updates
+--- More Model updates
 AnimateEnteringToast pos id anim ->
   model
   |> applyToastStyle pos id anim
@@ -507,3 +528,167 @@ the latter:
 ---
 
 And that should be it for the entrance animations.
+
+@s Exit animation
+
+The exit animation is more complicated.
+The effect is for a column to fly vertically up and fade out, so it's
+superficially just the reverse of a toast entering.
+But it's complicated in the model, because once a column is told to
+exit it's no longer a column that can receive new toasts;
+instead we should start with a new, empty, column that can receive new
+toasts while the old column flies up an disappears.
+
+That means we have to add two more fields to our model, which represent
+either column as it exits, and make sure they're initialised:
+
+--- More Model fields
+  , leftExiting : Column
+  , rightExiting : Column
+---
+
+--- More Model field initialisation
+    , leftExiting = emptyColumn
+    , rightExiting = emptyColumn
+---
+
+And then it will be useful to be able to get and set
+the left or right exiting column:
+
+--- Functions +=
+exitingColumn : Model -> Position -> Column
+exitingColumn model pos =
+  case pos of
+    Left -> model.leftExiting
+    Right -> model.rightExiting
+
+
+setExitingColumn : Position -> Column -> Model -> Model
+setExitingColumn pos col model =
+  case pos of
+    Left -> { model | leftExiting = col }
+    Right -> { model | rightExiting = col }
+
+
+---
+
+Now we've got a useful model
+we'll again go through the steps to add animation:
+* Set an initial style in our model
+* Subscribe to Animation's subscription
+* Set up an update Msg
+* Render our animation
+* Start an animation in our update statement
+
+@s Set an initial exit style in our model
+
+Since it's columns which exit, we need to make sure an initial (empty)
+column has a style and it's initialised:
+
+--- More Column type fields
+    , style : Animation.State
+---
+
+--- More empty Column fields
+  , style =
+      Animation.style
+        [ Animation.marginTop (Animation.px 0)
+        , Animation.opacity 1.0
+        ]
+---
+
+@s Subscribe to Animation's subscription
+
+As with the entrance of a toast, we need to wrap an animation message
+with the element that message is intended for: either the left or right
+column. And then we can create appropriate subscriptions:
+
+--- More Msgs +=
+  | AnimateExitingColumn Position Animation.Msg
+---
+
+--- subscriptions assignments +=
+      subsToExiting pos =
+        let
+            col = exitingColumn model pos
+        in
+            [ Animation.subscription (AnimateExitingColumn pos) [ col.style ] ]
+---
+
+--- More subscription lists +=
+    , subsToExiting Left
+    , subsToExiting Right
+---
+
+@s Set up an exit update Msg
+
+We respond to an exit update message:
+
+--- More Model updates +=
+AnimateExitingColumn pos anim ->
+  let
+      col = exitingColumn model pos
+      newStyle = Animation.update anim col.style
+  in
+      model
+      |> setExitingColumn pos { col | style = newStyle }
+      |> addNoCmd
+
+---
+
+@s Render our exit animation
+
+Our exit main model (the columns) becomes slightly trickier to render
+than before. Before we had just two columns. Now we've potentially
+got two more columns overlaid on top of them, flying up and disappearing.
+So we'll redefine our function to view the main model to allow this:
+
+--- View main model function :=
+viewMainModel : Model -> Element Msg
+viewMainModel model =
+  [ viewOverlaidColumns model.left model.leftExiting
+  , viewOverlaidColumns model.right model.rightExiting
+  ]
+    |> Element.row []
+
+
+---
+
+and viewing the overlaid columns is then:
+
+--- View columns and toasts functions +=
+viewOverlaidColumns : Column -> Column -> Element Msg
+viewOverlaidColumns col exitingCol =
+  let
+      topEl = viewColumn exitingCol
+  in
+      Element.column [Element.inFront topEl, alignTop] [viewColumn col]
+
+
+---
+
+And finally we make sure our column has any animation styles included:
+
+--- More Column stylings
+      , (List.map Element.htmlAttribute (Animation.render col.style))
+---
+
+@s Start an exit animation in our update statement
+
+To start an exit animation we need to move the relevant column in
+the model to become an "exiting" column, and style it appropriately:
+
+--- More column disposal operations
+          |> setExitingColumn pos
+               { toasts = col.toasts
+               , style = Animation.interrupt
+                  [ Animation.to
+                    [ Animation.marginTop (Animation.px -300)
+                    , Animation.opacity 0
+                    ]
+                  ]
+                  col.style
+               }
+---
+
+And that's it for the exit animation.
