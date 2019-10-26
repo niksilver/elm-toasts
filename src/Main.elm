@@ -1,5 +1,7 @@
+-- Main.elm
+-- Imports
 import Browser
-import Browser.Events exposing (onKeyPress)
+import Animation
 import Html exposing (Html)
 import Element exposing
   ( Element
@@ -7,16 +9,24 @@ import Element exposing
   , px, rgb
   , centerX, alignTop)
 import Element.Background as Background
-import Json.Decode as Decode exposing (Decoder)
-import Animation
+import Json.Decode as Decode
+import Browser.Events
 
 
-main =
-  Browser.element
-    { init = init
-    , update = update
-    , subscriptions = subscriptions
-    , view = view
+
+-- Type definitions
+type alias Model =
+  { left : Column
+  , leftExiting : Column
+  , right : Column
+  , rightExiting : Column
+  , toastCount : Int
+  }
+
+
+type alias Column =
+    { toasts : List Toast
+    , style : Animation.State
     }
 
 
@@ -27,30 +37,26 @@ type alias Toast =
   }
 
 
-type alias Column =
-    { toasts : List Toast
-    , style : Animation.State
+type Msg
+  = DisposeOfColumn Position
+  | AddToast Position
+  | IgnoreKey
+  | AnimateExitingColumn Position Animation.Msg
+  | AnimateEnteringToast Position Int Animation.Msg
+
+
+type Position = Left | Right
+
+
+
+-- Functions
+main =
+  Browser.element
+    { init = init
+    , update = update
+    , subscriptions = subscriptions
+    , view = view
     }
-
-
-type alias Model =
-  { left : Column
-  , leftExiting : Column
-  , right : Column
-  , rightExiting : Column
-  , toastCount : Int
-  }
-
-
-emptyColumn : Column
-emptyColumn =
-  { toasts = []
-  , style =
-      Animation.style
-        [ Animation.marginTop (Animation.px 0)
-        , Animation.opacity 1.0
-        ]
-  }
 
 
 init : () -> (Model, Cmd Msg)
@@ -65,75 +71,91 @@ init flags =
   )
 
 
-type Position = Left | Right
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+-- Update case clauses for key press update messages
+    DisposeOfColumn pos ->
+      let
+          col = column model pos
+      in
+          model
+          |> setColumn pos emptyColumn
+          |> setExitingColumn pos
+               { toasts = col.toasts
+               , style = Animation.interrupt
+                  [ Animation.to
+                    [ Animation.marginTop (Animation.px -300)
+                    , Animation.opacity 0
+                    ]
+                  ]
+                  col.style
+               }
+         |> addNoCmd
+
+    AddToast pos ->
+          model
+          |> incrementToastCount
+          |> appendToast pos
+          |> addNoCmd
+
+    IgnoreKey -> (model, Cmd.none)
+
+-- Update case clauses for animation update messages
+    AnimateExitingColumn pos anim ->
+      let
+          col = exitingColumn model pos
+          newStyle = Animation.update anim col.style
+      in
+          model
+          |> setExitingColumn pos { col | style = newStyle }
+          |> addNoCmd
+
+    AnimateEnteringToast pos id anim ->
+      model
+      |> applyToastStyle pos id anim
+      |> addNoCmd
 
 
-type Msg
-  = DisposeOfColumn Position
-  | AddToast Position
-  | IgnoreKey
-  | AnimateExitingColumn Position Animation.Msg
-  | AnimateEnteringToast Position Int Animation.Msg
+addNoCmd : Model -> (Model, Cmd Msg)
+addNoCmd model =
+  (model, Cmd.none)
 
 
-mainColumn : Model -> Position -> Column
-mainColumn model pos =
-  case pos of
-    Left -> model.left
-    Right -> model.right
-
-
-exitingColumn : Model -> Position -> Column
-exitingColumn model pos =
-  case pos of
-    Left -> model.leftExiting
-    Right -> model.rightExiting
-
-
-incrementToastCount : Model -> Model
-incrementToastCount model =
-  { model
-  | toastCount = model.toastCount + 1
-  }
-
-
-setMainColumn : Position -> Column -> Model -> Model
-setMainColumn pos col model =
-  case pos of
-    Left -> { model | left = col }
-    Right -> { model | right = col }
-
-
-mapToasts : (Toast -> Toast) -> Position -> Model -> Model
-mapToasts tMapper pos model =
-  let
-      col = mainColumn model pos
-      newCol = { col | toasts = List.map tMapper col.toasts }
-  in
-      setMainColumn pos newCol model
-
-
-getToasts : Position -> Model -> List Toast
-getToasts pos model =
-  mainColumn model pos
-  |> .toasts
-
-
-newToast : Int -> String -> Toast
-newToast id message =
-  { id = id
-  , message = message
-  , style = Animation.style
-    [ Animation.marginTop (Animation.px 320)
-    , Animation.opacity 0.0
-    ]
-    |> Animation.interrupt
-      [ Animation.to
-        [ Animation.marginTop (Animation.px 20)
+emptyColumn : Column
+emptyColumn =
+  { toasts = []
+  , style =
+      Animation.style
+        [ Animation.marginTop (Animation.px 0)
         , Animation.opacity 1.0
         ]
-      ]
   }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  let
+      subsToExiting pos =
+        let
+            col = exitingColumn model pos
+        in
+            [ Animation.subscription (AnimateExitingColumn pos) [ col.style ] ]
+      subsToEntering pos =
+        getToasts pos model
+        |> List.map (\t -> Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
+  in
+    [
+      -- List of subscriptions for key presses
+          [ Browser.Events.onKeyPress keyDecoder |> Sub.map keyStringToMsg ]
+
+    , subsToExiting Left
+    , subsToExiting Right
+    , subsToEntering Left
+    , subsToEntering Right
+    ]
+    |> List.concat
+    |> Sub.batch
 
 
 applyToastStyle : Position -> Int -> Animation.Msg -> Model -> Model
@@ -149,113 +171,13 @@ applyToastStyle pos id anim model =
       |> mapToasts tMapper pos
 
 
-appendToast : Position -> Model -> Model
-appendToast pos model =
+mapToasts : (Toast -> Toast) -> Position -> Model -> Model
+mapToasts tMapper pos model =
   let
-      mainCol = mainColumn model pos
-      newId = model.toastCount
-      message =
-        if pos == Left then
-          String.append "Left " (String.fromInt newId)
-        else
-          String.append "Right " (String.fromInt newId)
-      toast = newToast newId message
+      col = column model pos
+      newCol = { col | toasts = List.map tMapper col.toasts }
   in
-      model
-      |> setMainColumn pos { mainCol | toasts = List.append mainCol.toasts [ toast ] }
-
-
-setExitingColumn : Position -> Column -> Model -> Model
-setExitingColumn pos col model =
-  case pos of
-    Left -> { model | leftExiting = col }
-    Right -> { model | rightExiting = col }
-
-
-addCmds : Cmd Msg -> Model -> (Model, Cmd Msg)
-addCmds cmds model =
-  (model, cmds)
-
-
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
-  case msg of
-    DisposeOfColumn pos ->
-      let
-          mainCol = mainColumn model pos
-      in
-          model
-          |> setMainColumn pos emptyColumn
-          |> setExitingColumn pos
-               { toasts = mainCol.toasts
-               , style = Animation.interrupt
-                  [ Animation.to
-                    [ Animation.marginTop (Animation.px -300)
-                    , Animation.opacity 0
-                    ]
-                  ]
-                  mainCol.style
-               }
-         |> addCmds Cmd.none
-
-    AddToast pos ->
-          model
-          |> incrementToastCount
-          |> appendToast pos
-          |> addCmds Cmd.none
-
-    IgnoreKey -> (model, Cmd.none)
-
-    AnimateExitingColumn pos anim ->
-      let
-          col = exitingColumn model pos
-          newStyle = Animation.update anim col.style
-      in
-          model
-          |> setExitingColumn pos { col | style = newStyle }
-          |> addCmds Cmd.none
-
-    AnimateEnteringToast pos id anim ->
-      model
-      |> applyToastStyle pos id anim
-      |> addCmds Cmd.none
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-  let
-      subsToExiting pos =
-        let
-            col = exitingColumn model pos
-        in
-            [ Animation.subscription (AnimateExitingColumn pos) [ col.style ] ]
-      subsToEntering pos =
-        getToasts pos model
-        |> List.map (\t -> Animation.subscription (AnimateEnteringToast pos t.id) [ t.style ])
-  in
-    [ [ Sub.map keyStringToMsg (onKeyPress containerDecoder) ]
-    , subsToExiting Left
-    , subsToExiting Right
-    , subsToEntering Left
-    , subsToEntering Right
-    ]
-    |> List.concat
-    |> Sub.batch
-
-
-containerDecoder : Decoder String
-containerDecoder =
-  Decode.field "key" Decode.string
-
-
-keyStringToMsg : String -> Msg
-keyStringToMsg keyString =
-  case keyString of
-    "q" -> DisposeOfColumn Left
-    "w" -> DisposeOfColumn Right
-    "z" -> AddToast Left
-    "x" -> AddToast Right
-    _ -> IgnoreKey
+      setColumn pos newCol model
 
 
 view : Model -> Html Msg
@@ -313,49 +235,94 @@ viewToast toast =
       )
 
 
-{- ---------------------------------------------------------------------
-   Debug utilities
-   -----------------------------------------------------------------------}
+appendToast : Position -> Model -> Model
+appendToast pos model =
+  let
+      col = column model pos
+      newId = model.toastCount
+      message =
+        if pos == Left then
+          String.append "Left " (String.fromInt newId)
+        else
+          String.append "Right " (String.fromInt newId)
+      toast = newToast newId message
+  in
+      model
+      |> setColumn pos { col | toasts = List.append col.toasts [ toast ] }
 
 
-modelToString : Model -> String
-modelToString model =
-  String.concat
-    [ " left = "
-    , columnToString model.left
-    , ", leftExiting = "
-    , columnToString model.leftExiting
-    , ", right = "
-    , columnToString model.right
-    , ", rightExiting = "
-    , columnToString model.rightExiting
-    , "}"
+newToast : Int -> String -> Toast
+newToast id message =
+  { id = id
+  , message = message
+  , style = Animation.style
+    [ Animation.marginTop (Animation.px 320)
+    , Animation.opacity 0.0
     ]
+    |> Animation.interrupt
+      [ Animation.to
+        [ Animation.marginTop (Animation.px 20)
+        , Animation.opacity 1.0
+        ]
+      ]
+  }
 
 
-columnToString : Column -> String
-columnToString col =
-  String.concat
-    [ "{ toasts = "
-    , toastListToString col.toasts
-    , ", style = ... }"
-    ]
-
-toastListToString : List Toast -> String
-toastListToString toasts =
-  String.concat
-    [ "["
-    , List.map toastToString toasts |> String.join ", "
-    , "]"
-    ]
+keyDecoder : Decode.Decoder String
+keyDecoder =
+  Decode.field "key" Decode.string
 
 
-toastToString : Toast -> String
-toastToString toast =
-  String.concat
-    [ "{...\""
-    , toast.message
-    , "\"...}"
-    ]
+keyStringToMsg : String -> Msg
+keyStringToMsg keyString =
+  case keyString of
+    "q" -> DisposeOfColumn Left
+    "w" -> DisposeOfColumn Right
+    "z" -> AddToast Left
+    "x" -> AddToast Right
+    _ -> IgnoreKey
+
+
+column : Model -> Position -> Column
+column model pos =
+  case pos of
+    Left -> model.left
+    Right -> model.right
+
+
+setColumn : Position -> Column -> Model -> Model
+setColumn pos col model =
+  case pos of
+    Left -> { model | left = col }
+    Right -> { model | right = col }
+
+
+exitingColumn : Model -> Position -> Column
+exitingColumn model pos =
+  case pos of
+    Left -> model.leftExiting
+    Right -> model.rightExiting
+
+
+setExitingColumn : Position -> Column -> Model -> Model
+setExitingColumn pos col model =
+  case pos of
+    Left -> { model | leftExiting = col }
+    Right -> { model | rightExiting = col }
+
+
+incrementToastCount : Model -> Model
+incrementToastCount model =
+  { model
+  | toastCount = model.toastCount + 1
+  }
+
+
+getToasts : Position -> Model -> List Toast
+getToasts pos model =
+  column model pos
+  |> .toasts
+
+
 
 

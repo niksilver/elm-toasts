@@ -28,7 +28,7 @@ uniqueness: "Left 1", "Left 2", "Right 3", "Left 4", etc.
 
 As usual, the structure of our program is:
 
---- Main2.elm
+--- Main.elm
 @{Imports}
 
 
@@ -57,8 +57,8 @@ main =
 
 @s Principle of animations
 
-We separate the data in the model and how each part is styled, but it's
-all held in the model.
+In the model we separate the core data from how each part is styled, but it's
+all held in the model. Animation is styling.
 
 However, we need to handle entrance and exit animations differently
 in the model. As soon as a toast is triggered to enter it becomes
@@ -68,8 +68,8 @@ column is set to be empty, and the (now old) column's data is moved
 into an "exiting" column, present only for rendering purposes as
 it flies away.
 
-And some more consequences of all of that:
-* We need to identify a column as left or right, as we'll see later;
+Some more consequences of all of that:
+* We'll need to identify a column as left or right;
 * Each toast will need a unique ID to receive a unique animation instruction;
 * We'll use [M. D. Giffiths's style animation
   package](https://github.com/mdgriffith/elm-style-animation).
@@ -122,13 +122,8 @@ init flags =
 
 ---
 
-We'll also need some basic functions to get and set values in these
-models. We won't worry about their definitions now.
-
---- Functions +=
-@{Basic model functions for columns}
-@{Basic model functions for toasts}
----
+We'll also need some basic functions to get and set values in the
+model, but we'll define those at the end.
 
 @s Messages into the application
 
@@ -507,11 +502,11 @@ import Browser.Events
 ---
 
 
-@s Basic model functions for columns
+@s Basic model functions
 
 Finally some basic functions to manage columns:
 
---- Basic model functions for columns
+--- Functions +=
 column : Model -> Position -> Column
 column model pos =
   case pos of
@@ -542,11 +537,9 @@ setExitingColumn pos col model =
 
 ---
 
-@s Basic model functions for toasts
+...and for toasts...
 
-Remaining functions to manage toasts:
-
---- Basic model functions for toasts
+--- Functions +=
 incrementToastCount : Model -> Model
 incrementToastCount model =
   { model
@@ -562,4 +555,4 @@ getToasts pos model =
 
 ---
 
-
+That's it!

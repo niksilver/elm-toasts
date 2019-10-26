@@ -7,5 +7,5 @@
 ./lit --tangle --out-dir src design/Main.lit
 
 # Compile the application
-elm make --output=main.html src/Main2.elm
+elm make --output=main.html src/Main.elm
 

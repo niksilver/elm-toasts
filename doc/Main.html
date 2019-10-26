@@ -71,7 +71,7 @@ uniqueness: "Left 1", "Left 2", "Right 3", "Left 4", etc.
 </p>
 
 <div class="codeblock">
-<span class="codeblock_name">{<strong>Main2.elm</strong> <a href="Main.html#1:3">3</a>}</span>
+<span class="codeblock_name">{<strong>Main.elm</strong> <a href="Main.html#1:3">3</a>}</span>
 <pre class="prettyprint lang-elm">
 <span class="nocode pln">{Imports, <a href="Main.html#1:3">3</a>}</span>
 
@@ -110,14 +110,14 @@ main =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 
 </div>
 </div>
 <a name="1:4"><div class="section"><h4>4. Principle of animations</h4></a>
-<p>We separate the data in the model and how each part is styled, but it's
-all held in the model.
+<p>In the model we separate the core data from how each part is styled, but it's
+all held in the model. Animation is styling.
 </p>
 <p>However, we need to handle entrance and exit animations differently
 in the model. As soon as a toast is triggered to enter it becomes
@@ -127,10 +127,10 @@ column is set to be empty, and the (now old) column's data is moved
 into an "exiting" column, present only for rendering purposes as
 it flies away.
 </p>
-<p>And some more consequences of all of that:
+<p>Some more consequences of all of that:
 </p>
 <ul>
-<li>We need to identify a column as left or right, as we'll see later;
+<li>We'll need to identify a column as left or right;
 </li>
 <li>Each toast will need a unique ID to receive a unique animation instruction;
 </li>
@@ -200,24 +200,14 @@ init flags =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
-<p>We'll also need some basic functions to get and set values in these
-models. We won't worry about their definitions now.
+<p>We'll also need some basic functions to get and set values in the
+model, but we'll define those at the end.
 </p>
 
-<div class="codeblock">
-<span class="codeblock_name">{Functions <a href="Main.html#1:3">3</a>} +=</span>
-<pre class="prettyprint lang-elm">
-<span class="nocode pln">{Basic model functions for columns, <a href="Main.html#1:13">13</a>}</span>
-<span class="nocode pln">{Basic model functions for toasts, <a href="Main.html#1:14">14</a>}</span>
-</pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
-
-<p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
-</div>
 </div>
 <a name="1:5"><div class="section"><h4>5. Messages into the application</h4></a>
 <p>We'll need to handle these messages:
@@ -263,7 +253,7 @@ update msg model =
 <span class="nocode pln">{Update case clauses for key press update messages, <a href="Main.html#1:11">11</a>}</span>
 <span class="nocode pln">{Update case clauses for animation update messages, <a href="Main.html#1:9">9</a>}</span>
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -279,7 +269,7 @@ addNoCmd model =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -324,7 +314,7 @@ emptyColumn =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -370,7 +360,7 @@ subscriptions model =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -431,7 +421,7 @@ mapToasts tMapper pos model =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -540,7 +530,7 @@ viewToast toast =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -626,7 +616,7 @@ newToast id message =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -665,7 +655,7 @@ keyDecoder =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -686,7 +676,7 @@ keyStringToMsg keyString =
 
 
 </pre>
-<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a> and <a href="Main.html#1:12">12</a></p>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:13">13</a> and <a href="Main.html#1:13">13</a></p>
 
 <p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
@@ -714,12 +704,12 @@ import Browser.Events
 <p class="seealso">Used in section <a href="Main.html#1:8">8</a></p>
 </div>
 </div>
-<a name="1:13"><div class="section"><h4>13. Basic model functions for columns</h4></a>
+<a name="1:13"><div class="section"><h4>13. Basic model functions</h4></a>
 <p>Finally some basic functions to manage columns:
 </p>
 
 <div class="codeblock">
-<span class="codeblock_name">{Basic model functions for columns <a href="Main.html#1:13">13</a>}</span>
+<span class="codeblock_name">{Functions <a href="Main.html#1:3">3</a>} +=</span>
 <pre class="prettyprint lang-elm">
 column : Model -&gt; Position -&gt; Column
 column model pos =
@@ -750,17 +740,15 @@ setExitingColumn pos col model =
 
 
 </pre>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:13">13</a></p>
 
-
-<p class="seealso">Used in section <a href="Main.html#1:4">4</a></p>
+<p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
-</div>
-<a name="1:14"><div class="section"><h4>14. Basic model functions for toasts</h4></a>
-<p>Remaining functions to manage toasts:
+<p>...and for toasts...
 </p>
 
 <div class="codeblock">
-<span class="codeblock_name">{Basic model functions for toasts <a href="Main.html#1:14">14</a>}</span>
+<span class="codeblock_name">{Functions <a href="Main.html#1:3">3</a>} +=</span>
 <pre class="prettyprint lang-elm">
 incrementToastCount : Model -&gt; Model
 incrementToastCount model =
@@ -776,10 +764,12 @@ getToasts pos model =
 
 
 </pre>
+<p class="seealso">Added to in sections <a href="Main.html#1:4">4</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:5">5</a>, <a href="Main.html#1:7">7</a>, <a href="Main.html#1:8">8</a>, <a href="Main.html#1:9">9</a>, <a href="Main.html#1:10">10</a>, <a href="Main.html#1:11">11</a>, <a href="Main.html#1:12">12</a>, <a href="Main.html#1:12">12</a> and <a href="Main.html#1:13">13</a></p>
 
-
-<p class="seealso">Used in section <a href="Main.html#1:4">4</a></p>
+<p class="seealso">Used in section <a href="Main.html#1:3">3</a></p>
 </div>
+<p>That's it!
+</p>
 
 </div>
 </body>
